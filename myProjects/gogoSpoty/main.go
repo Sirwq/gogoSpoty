@@ -67,7 +67,15 @@ func main() {
 			}
 
 			if playing.Item != nil {
-				fmt.Println("curently playing", playing.Item)
+				if playing.Playing {
+					fmt.Println("curently playing: ", playing.Item)
+					fmt.Println("is playing true: ", playing.Playing)
+					fmt.Println("progress: ", playing.Progress)
+					fmt.Println("timestamp: ", playing.Timestamp)
+					fmt.Println("context: ", playing.PlaybackContext)
+				} else {
+					fmt.Println("Paused or nothing is playing")
+				}
 			}
 
 			time.Sleep(5 * time.Second)
