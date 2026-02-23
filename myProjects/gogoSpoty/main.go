@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/zmb3/spotify/v2"
@@ -55,17 +56,25 @@ func main() {
 	}
 
 	client := spotify.New(auth.Client(context.Background(), token))
+	ctx := context.Background()
 
-	user, _ := client.CurrentUser(context.Background())
-	fmt.Println("Logged in as:", user.DisplayName)
+	go func() {
+		for {
+			playing, _ := client.PlayerCurrentlyPlaying(ctx)
 
-	playing, err := client.PlayerCurrentlyPlaying(context.Background())
+			if err != nil {
+				fmt.Println("Error while searching for playing", err)
+			}
 
-	if err != nil {
-		fmt.Println("Error while searching for playing", err)
-	}
+			if playing.Item != nil {
+				fmt.Println("curently playing", playing.Item)
+			}
 
-	fmt.Println(playing)
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	select {}
 
 }
 
