@@ -19,6 +19,8 @@ func main() {
 	go http.ListenAndServe(port, nil)
 	token, auth := OAuthFlow(redirUrl)
 
+	/* DO NOT FORGET TO CHANGE RANDSTATE LATER */
+
 	ctx := context.Background()
 	client := spotify.New(auth.Client(ctx, token))
 
