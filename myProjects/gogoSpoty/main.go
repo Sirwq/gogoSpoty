@@ -16,7 +16,14 @@ func main() {
 	port := ":5111"
 	redirUrl := "http://127.0.0.1:5111/callback"
 
-	go http.ListenAndServe(port, nil)
+	var t Track
+
+	mux := http.NewServeMux()
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.HandleFunc("/widget", widgetHandler())
+	mux.HandleFunc("/api/current", trackHandler(&t))
+
+	go http.ListenAndServe(port, mux)
 	token, auth := OAuthFlow(redirUrl)
 
 	/* DO NOT FORGET TO CHANGE RANDSTATE LATER */
@@ -25,7 +32,6 @@ func main() {
 	client := spotify.New(auth.Client(ctx, token))
 
 	go func() {
-		var t Track
 		for {
 			playing, err := client.PlayerCurrentlyPlaying(ctx)
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"html/template"
 	"log"
 	"net/http"
 )
@@ -23,16 +22,10 @@ func trackHandler(t *Track) http.HandlerFunc {
 	}
 }
 
-func widgetHandler(t *Track) http.HandlerFunc {
-	tmpl, err := template.ParseFiles("templates/index.html")
-	check(err, "parsing template")
-
+func widgetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data := t
-		err = tmpl.Execute(w, data)
-		check(err, "executing template")
+		http.ServeFile(w, r, "static/widget.html")
 	}
-
 }
 
 func check(err error, msg string) {

@@ -27,6 +27,8 @@ func (t *Track) String() string {
 			s.WriteString(", ")
 		}
 	}
+	s.WriteString("\n")
+	s.WriteString(t.Item.Album.Images[0].URL)
 	t.mx.Unlock()
 	return s.String()
 }
