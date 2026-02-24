@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -13,6 +15,29 @@ import (
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"golang.org/x/oauth2"
 )
+
+type Track struct {
+	mx        sync.Mutex
+	Item      spotify.FullTrack       `json:"item"`
+	Playing   bool                    `json:"is_playing"`
+	Progress  spotify.Numeric         `json:"progress_ms"`
+	Timestamp int64                   `json:"timestamp"`
+	Context   spotify.PlaybackContext `json:"context"`
+}
+
+func (t *Track) String() string {
+	var s strings.Builder
+	t.mx.Lock()
+	s.WriteString(t.Item.Name + "\n") // Name ?
+	for i, v := range t.Item.Artists {
+		s.WriteString(v.Name)
+		if i < len(t.Item.Artists)-1 {
+			s.WriteString(", ")
+		}
+	}
+	t.mx.Unlock()
+	return s.String()
+}
 
 func main() {
 	godotenv.Load(".env")
@@ -59,6 +84,7 @@ func main() {
 	ctx := context.Background()
 
 	go func() {
+		var t Track
 		for {
 			playing, _ := client.PlayerCurrentlyPlaying(ctx)
 
@@ -68,16 +94,17 @@ func main() {
 
 			if playing.Item != nil {
 				if playing.Playing {
-					fmt.Println("curently playing: ", playing.Item)
-					fmt.Println("is playing true: ", playing.Playing)
-					fmt.Println("progress: ", playing.Progress)
-					fmt.Println("timestamp: ", playing.Timestamp)
-					fmt.Println("context: ", playing.PlaybackContext)
+					t.mx.Lock()
+					t.Item = *playing.Item
+					t.Playing = playing.Playing
+					t.Timestamp = playing.Timestamp
+					t.Context = playing.PlaybackContext
+					t.mx.Unlock()
 				} else {
 					fmt.Println("Paused or nothing is playing")
 				}
 			}
-
+			fmt.Println(&t)
 			time.Sleep(5 * time.Second)
 		}
 	}()
