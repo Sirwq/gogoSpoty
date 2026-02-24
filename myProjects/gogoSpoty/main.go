@@ -28,7 +28,7 @@ type Track struct {
 func (t *Track) String() string {
 	var s strings.Builder
 	t.mx.Lock()
-	s.WriteString(t.Item.Name + "\n") // Name ?
+	s.WriteString(t.Item.Name + "\n")
 	for i, v := range t.Item.Artists {
 		s.WriteString(v.Name)
 		if i < len(t.Item.Artists)-1 {
@@ -37,6 +37,19 @@ func (t *Track) String() string {
 	}
 	t.mx.Unlock()
 	return s.String()
+}
+
+func updateTrack(t *Track, playing *spotify.CurrentlyPlaying) {
+	t.mx.Lock()
+	if playing.Playing {
+		t.Item = *playing.Item
+		t.Playing = playing.Playing
+		t.Timestamp = playing.Timestamp
+		t.Context = playing.PlaybackContext
+	} else {
+		fmt.Println("Paused or nothing is playing")
+	}
+	t.mx.Unlock()
 }
 
 func main() {
@@ -93,17 +106,9 @@ func main() {
 			}
 
 			if playing.Item != nil {
-				if playing.Playing {
-					t.mx.Lock()
-					t.Item = *playing.Item
-					t.Playing = playing.Playing
-					t.Timestamp = playing.Timestamp
-					t.Context = playing.PlaybackContext
-					t.mx.Unlock()
-				} else {
-					fmt.Println("Paused or nothing is playing")
-				}
+				updateTrack(&t, playing)
 			}
+
 			fmt.Println(&t)
 			time.Sleep(5 * time.Second)
 		}
