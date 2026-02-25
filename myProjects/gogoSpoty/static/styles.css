@@ -11,6 +11,11 @@ body {
   padding: 10px;
   border-radius: 6px;
   max-width: 500px;
+  /* animation */
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+
 }
 
 .cover {
@@ -61,4 +66,8 @@ body {
   transition: width 0.3s;
 }
 
-.hidden { display: none !important; }
+.hidden {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}

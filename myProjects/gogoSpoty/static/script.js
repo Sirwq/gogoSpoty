@@ -1,48 +1,64 @@
-let lastTimestamp
-let progress
-let duration
-let playing
+const state = { lastTimestamp: 0, progress: 0, duration: 0, playing: false };
+const UPDATE_INTERVAL = 5000;
+
+function tick() {
+    updateProgressBar();
+    requestAnimationFrame(tick);
+}
 
 document.addEventListener('DOMContentLoaded', function() {
+    updateTrack();
+    setInterval(updateTrack, UPDATE_INTERVAL);
+    requestAnimationFrame(tick);
+});
 
 async function updateTrack() {
-    const res = await fetch('/api/current');
-    const data = await res.json();
+    const data = await fetchData();
+    updateUI(data);
+}
 
-    if (!data.item) {
-        document.querySelector('.player').classList.add('hidden');
+function updateUI(data) {
+
+    if (!data?.item) {
+        handleVisibility(false);
         return;
     }
 
-    document.querySelector('.player').classList.remove('hidden');
-
-    lastTimestamp = Date.now()
-    progress = data.progress_ms;
-    duration = data.item.duration_ms;
-    playing = data.is_playing;
-
+    state.lastTimestamp = Date.now()
+    state.progress = data.progress_ms;
+    state.duration = data.item.duration_ms;
+    state.playing = data.is_playing;
+    
+    handleVisibility(state.playing);
     const s = data.item.artists
     .map(artist => artist.name)
     .join(", ");
     
-    console.log('Updating...', data);
     document.getElementById('artist').textContent = s;
     document.getElementById('progress').style.background = "red" //data.accent_color; next iter
     document.getElementById('track-name').textContent = data.item.name;
-    document.getElementById('cover').src = data.item.album.images[0].url;
 
-    const total =  Math.floor(duration / 1000);
-    document.getElementById('total-time').textContent = formatTime(total);    
+    if (data.item?.album?.images?.length > 0) {
+        document.getElementById('cover').src = data.item.album.images[0].url;
+    }
+
+    const total =  Math.floor(state.duration / 1000);
+    document.getElementById('total-time').textContent = formatTime(total);   
+    
+    console.log('Updating...', data);
+}
+
+function handleVisibility(shouldShow) {
+    const player = document.querySelector('.player');
+    player.classList.toggle('hidden', !shouldShow);
 }
 
 function updateProgressBar() {
     const now = Date.now();
-    const elapsed = playing ? now - lastTimestamp : 0;
-
-    const rawProgress = progress + elapsed;
-    const clampedProgress = Math.min(rawProgress, duration);
-
-    const percent = (clampedProgress / duration) * 100;
+    const elapsed = state.playing ? now - state.lastTimestamp : 0;
+    const rawProgress = state.progress + elapsed;
+    const clampedProgress = Math.min(rawProgress, state.duration);
+    const percent = (clampedProgress / state.duration) * 100;
     const timeSeconds = Math.floor(clampedProgress / 1000);
 
     document.getElementById('current-time').textContent =
@@ -58,14 +74,18 @@ function formatTime(seconds) {
     return mins + ':' + (secs < 10 ? "0" : '') + secs;
 }
 
-function tick() {
-    updateProgressBar();
-    requestAnimationFrame(tick);
+async function fetchData() {
+    try {
+        const res = await fetch('/api/current');
+
+        if (!res.ok) {
+            throw new Error (`HTTP error ${res.status}`);
+        }
+        return await res.json();
+    } catch (error) {
+        console.error('Fetch failed:', error);
+        return null;
+    }
 }
 
-    updateTrack();
-    setInterval(updateTrack, 5000);
-    requestAnimationFrame(tick);
 
-    console.log("updated")
-});
