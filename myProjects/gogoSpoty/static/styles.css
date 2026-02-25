@@ -60,3 +60,5 @@ body {
   border-radius: 3px;
   transition: width 0.3s;
 }
+
+.hidden { display: none !important; }

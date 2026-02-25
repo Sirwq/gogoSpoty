@@ -22,6 +22,9 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	mux.HandleFunc("/widget", widgetHandler())
 	mux.HandleFunc("/api/current", trackHandler(&t))
+	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
 
 	go http.ListenAndServe(port, mux)
 	token, auth := OAuthFlow(redirUrl)

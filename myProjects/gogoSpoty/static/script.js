@@ -37,16 +37,6 @@ async function updateTrack() {
 
 function updateProgressBar() {
     const now = Date.now();
-    const elapsed = now - lastTimestamp;
-    const percent = ((progress + elapsed) / duration) * 100;
-    const current = Math.floor((progress + elapsed) / 1000);
-
-    document.getElementById('current-time').textContent = formatTime(current);
-    document.getElementById('progress').style.width = percent + '%';
-}
-
-function updateProgressBar() {
-    const now = Date.now();
     const elapsed = playing ? now - lastTimestamp : 0;
 
     const rawProgress = progress + elapsed;
