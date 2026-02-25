@@ -1,6 +1,14 @@
+document.addEventListener('DOMContentLoaded', function() {
+
 async function updateTrack() {
     const res = await fetch('/api/current');
-    const data = res.json();
+    const data = await res.json();
+
+    if (!data.item) {
+        return;
+    }
+
+    console.log('Updating...', data);
 
     document.getElementById('cover').src = data.item.album.images[0].url;
     document.getElementById('track-name').textContent = data.item.name;
@@ -17,10 +25,13 @@ async function updateTrack() {
 }
 
 function formatTime(seconds) {
-    const mins = Math.floor(secs/60);
+    const mins = Math.floor(seconds/60); 
     const secs = seconds % 60;
     return mins + ':' + (secs < 10 ? "0" : '') + secs;
 }
 
-updateTrack();
-setInterval(updateTrack, 5000);
+
+    updateTrack();
+    setInterval(updateTrack, 5000);
+    console.log("updated")
+});

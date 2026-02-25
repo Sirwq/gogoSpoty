@@ -28,7 +28,6 @@ func (t *Track) String() string {
 		}
 	}
 	s.WriteString("\n")
-	s.WriteString(t.Item.Album.Images[0].URL)
 	t.mx.Unlock()
 	return s.String()
 }
@@ -39,6 +38,7 @@ func updateTrack(t *Track, playing *spotify.CurrentlyPlaying) {
 		t.Item = *playing.Item
 		t.Playing = playing.Playing
 		t.Timestamp = playing.Timestamp
+		t.Progress = playing.Progress
 		t.Context = playing.PlaybackContext
 	} else {
 		fmt.Println("Paused or nothing is playing")
