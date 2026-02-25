@@ -17,6 +17,8 @@ type Track struct {
 	Context   spotify.PlaybackContext `json:"context"`
 }
 
+/*  TODO add accent color to Track struct that will help with colors in js*/
+
 func (t *Track) String() string {
 	var s strings.Builder
 	t.mx.Lock()
@@ -41,6 +43,7 @@ func updateTrack(t *Track, playing *spotify.CurrentlyPlaying) {
 		t.Progress = playing.Progress
 		t.Context = playing.PlaybackContext
 	} else {
+		//t = nil; ??????????
 		fmt.Println("Paused or nothing is playing")
 	}
 	t.mx.Unlock()

@@ -1,3 +1,7 @@
+let lastTimestamp
+let progress
+let duration
+
 document.addEventListener('DOMContentLoaded', function() {
 
 async function updateTrack() {
@@ -8,19 +12,32 @@ async function updateTrack() {
         return;
     }
 
+    lastTimestamp = Date.now()
+    progress = data.progress_ms;
+    duration = data.item.duration_ms;
+
+    const s = data.item.artists
+    .map(artist => artist.name)
+    .join(", ");
+    
     console.log('Updating...', data);
-
-    document.getElementById('cover').src = data.item.album.images[0].url;
+    document.getElementById('artist').textContent = s;
+    document.getElementById('progress').style.background = "red" //data.accent_color; next iter
     document.getElementById('track-name').textContent = data.item.name;
-    // add loop for multiple singers
-    document.getElementById('artist').textContent = data.item.artists[0].name;
+    document.getElementById('cover').src = data.item.album.images[0].url;
 
-    const current = Math.floor(data.progress_ms / 1000);
-    const total =  Math.floor(data.item.duration_ms / 1000);
-    const percent = (data.progress_ms / data.item.duration_ms) * 100;
+    const total =  Math.floor(duration / 1000);
+    document.getElementById('total-time').textContent = formatTime(total);    
+}
+
+function updateProgressBar() {
+    const now = Date.now();
+
+    const elapsed = now - lastTimestamp;
+    const percent = ((progress + elapsed) / duration) * 100;
+    const current = Math.floor((progress + elapsed) / 1000);
 
     document.getElementById('current-time').textContent = formatTime(current);
-    document.getElementById('total-time').textContent = formatTime(total);
     document.getElementById('progress').style.width = percent + '%';
 }
 
@@ -33,5 +50,6 @@ function formatTime(seconds) {
 
     updateTrack();
     setInterval(updateTrack, 5000);
+    setInterval(updateProgressBar, 100);
     console.log("updated")
 });
