@@ -1,6 +1,7 @@
 let lastTimestamp
 let progress
 let duration
+let playing
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -9,12 +10,16 @@ async function updateTrack() {
     const data = await res.json();
 
     if (!data.item) {
+        document.querySelector('.player').classList.add('hidden');
         return;
     }
+
+    document.querySelector('.player').classList.remove('hidden');
 
     lastTimestamp = Date.now()
     progress = data.progress_ms;
     duration = data.item.duration_ms;
+    playing = data.is_playing;
 
     const s = data.item.artists
     .map(artist => artist.name)
@@ -32,7 +37,6 @@ async function updateTrack() {
 
 function updateProgressBar() {
     const now = Date.now();
-
     const elapsed = now - lastTimestamp;
     const percent = ((progress + elapsed) / duration) * 100;
     const current = Math.floor((progress + elapsed) / 1000);
@@ -41,15 +45,37 @@ function updateProgressBar() {
     document.getElementById('progress').style.width = percent + '%';
 }
 
+function updateProgressBar() {
+    const now = Date.now();
+    const elapsed = playing ? now - lastTimestamp : 0;
+
+    const rawProgress = progress + elapsed;
+    const clampedProgress = Math.min(rawProgress, duration);
+
+    const percent = (clampedProgress / duration) * 100;
+    const timeSeconds = Math.floor(clampedProgress / 1000);
+
+    document.getElementById('current-time').textContent =
+        formatTime(timeSeconds);
+
+    document.getElementById('progress').style.width =
+        percent + '%';
+}
+
 function formatTime(seconds) {
     const mins = Math.floor(seconds/60); 
     const secs = seconds % 60;
     return mins + ':' + (secs < 10 ? "0" : '') + secs;
 }
 
+function tick() {
+    updateProgressBar();
+    requestAnimationFrame(tick);
+}
 
     updateTrack();
     setInterval(updateTrack, 5000);
-    setInterval(updateProgressBar, 100);
+    requestAnimationFrame(tick);
+
     console.log("updated")
 });

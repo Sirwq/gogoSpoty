@@ -31,6 +31,8 @@ func main() {
 	ctx := context.Background()
 	client := spotify.New(auth.Client(ctx, token))
 
+	fmt.Println("Server is running...")
+
 	go func() {
 		for {
 			playing, err := client.PlayerCurrentlyPlaying(ctx)
@@ -43,8 +45,8 @@ func main() {
 				updateTrack(&t, playing)
 			}
 
-			fmt.Println(&t)
-			time.Sleep(5 * time.Second)
+			//fmt.Println(&t)
+			time.Sleep(4 * time.Second)
 		}
 	}()
 

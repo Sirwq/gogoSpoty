@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 
@@ -36,15 +35,11 @@ func (t *Track) String() string {
 
 func updateTrack(t *Track, playing *spotify.CurrentlyPlaying) {
 	t.mx.Lock()
-	if playing.Playing {
-		t.Item = *playing.Item
-		t.Playing = playing.Playing
-		t.Timestamp = playing.Timestamp
-		t.Progress = playing.Progress
-		t.Context = playing.PlaybackContext
-	} else {
-		//t = nil; ??????????
-		fmt.Println("Paused or nothing is playing")
-	}
+	t.Item = *playing.Item
+	t.Playing = playing.Playing
+	t.Timestamp = playing.Timestamp
+	t.Progress = playing.Progress
+	t.Context = playing.PlaybackContext
+	t.Progress = playing.Progress
 	t.mx.Unlock()
 }
