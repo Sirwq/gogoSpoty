@@ -2,8 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+
+	spotifyauth "github.com/zmb3/spotify/v2/auth"
+	"golang.org/x/oauth2"
 )
 
 func trackHandler(t *Track) http.HandlerFunc {
@@ -25,6 +29,18 @@ func trackHandler(t *Track) http.HandlerFunc {
 func widgetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/widget.html")
+	}
+}
+
+func callbackHandler(state string, auth *spotifyauth.Authenticator, ch chan *oauth2.Token) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token, err := auth.Token(r.Context(), state, r)
+		if err != nil {
+			http.Error(w, "Auth failed", http.StatusForbidden)
+			return
+		}
+		fmt.Fprintf(w, "Login success!")
+		ch <- token
 	}
 }
 

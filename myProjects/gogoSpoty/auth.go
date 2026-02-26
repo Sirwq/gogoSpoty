@@ -1,16 +1,17 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"golang.org/x/oauth2"
 )
 
-func OAuthFlow(redirUrl string) (*oauth2.Token, *spotifyauth.Authenticator) {
+func OAuthFlow(redirUrl string) (string, *spotifyauth.Authenticator, chan *oauth2.Token) {
 	auth := spotifyauth.New(
 		spotifyauth.WithRedirectURL(redirUrl),
 		spotifyauth.WithScopes(
@@ -22,28 +23,16 @@ func OAuthFlow(redirUrl string) (*oauth2.Token, *spotifyauth.Authenticator) {
 		spotifyauth.WithClientSecret(os.Getenv("CLIENT_SECRET")),
 	)
 
-	state := "randstate"
+	state := generateRandState()
 
 	ch := make(chan *oauth2.Token)
 
-	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		token, err := auth.Token(r.Context(), state, r)
-		if err != nil {
-			http.Error(w, "Auth failed", http.StatusForbidden)
-			return
-		}
-		fmt.Fprintf(w, "Login success!")
-		ch <- token
-	})
-
-	token, err := loadToken()
-	if err != nil {
-		url := auth.AuthURL(state)
-		fmt.Println("Open this url: ", url)
-		token = <-ch
-		saveToken(token)
-	}
-	return token, auth
+	url := auth.AuthURL(state)
+	fmt.Println("Open this url: ", url)
+	// 	// token = <-ch
+	// saveToken(token)
+	// }
+	return state, auth, ch
 }
 
 func saveToken(token *oauth2.Token) error {
@@ -63,4 +52,10 @@ func loadToken() (*oauth2.Token, error) {
 	var token oauth2.Token
 	err = json.Unmarshal(data, &token)
 	return &token, err
+}
+
+func generateRandState() string {
+	k := make([]byte, 32)
+	rand.Read(k)
+	return hex.EncodeToString(k)
 }
