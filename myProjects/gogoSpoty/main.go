@@ -34,6 +34,8 @@ func main() {
 	ctx := context.Background()
 	token, err := loadToken()
 	if err != nil {
+		url := auth.AuthURL(state)
+		fmt.Println("Open this url: ", url)
 		token = <-ch
 		saveToken(token)
 	}

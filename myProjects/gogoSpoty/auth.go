@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"os"
 
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
@@ -24,14 +23,7 @@ func OAuthFlow(redirUrl string) (string, *spotifyauth.Authenticator, chan *oauth
 	)
 
 	state := generateRandState()
-
 	ch := make(chan *oauth2.Token)
-
-	url := auth.AuthURL(state)
-	fmt.Println("Open this url: ", url)
-	// 	// token = <-ch
-	// saveToken(token)
-	// }
 	return state, auth, ch
 }
 
