@@ -9,7 +9,11 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/zmb3/spotify/v2"
+	spotifyauth "github.com/zmb3/spotify/v2/auth"
+	"golang.org/x/oauth2"
 )
+
+/* implement .ENV loading trough UI */
 
 func main() {
 	godotenv.Load(".env")
@@ -20,15 +24,8 @@ func main() {
 	var t Track
 	var waitTime time.Duration = 5
 	state, auth, ch := OAuthFlow(redirUrl)
-
 	mux := http.NewServeMux()
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	mux.HandleFunc("/widget", widgetHandler())
-	mux.HandleFunc("/api/current", trackHandler(&t))
-	mux.HandleFunc("/callback", callbackHandler(state, auth, ch))
-	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
-	})
+	setupRoutes(mux, &t, state, auth, ch)
 
 	go http.ListenAndServe(port, mux)
 	ctx := context.Background()
@@ -42,6 +39,7 @@ func main() {
 
 	client := spotify.New(auth.Client(ctx, token))
 
+	fmt.Println(time.Now().Clock())
 	fmt.Println("Server is running...")
 
 	go func() {
@@ -54,7 +52,7 @@ func main() {
 				continue
 			}
 
-			if playing != nil {
+			if playing != nil && playing.Item != nil {
 				updateTrack(&t, playing)
 			}
 
@@ -64,4 +62,14 @@ func main() {
 
 	select {}
 
+}
+
+func setupRoutes(mux *http.ServeMux, t *Track, state string, auth *spotifyauth.Authenticator, ch chan *oauth2.Token) {
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.HandleFunc("/widget", widgetHandler())
+	mux.HandleFunc("/api/current", trackHandler(t))
+	mux.HandleFunc("/callback", callbackHandler(state, auth, ch))
+	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
 }
