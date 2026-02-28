@@ -1,4 +1,4 @@
-package main
+package spoty
 
 import (
 	"crypto/rand"
@@ -27,7 +27,7 @@ func OAuthFlow(redirUrl string) (string, *spotifyauth.Authenticator, chan *oauth
 	return state, auth, ch
 }
 
-func saveToken(token *oauth2.Token) error {
+func SaveToken(token *oauth2.Token) error {
 	data, err := json.Marshal(token)
 
 	if err != nil {
@@ -36,7 +36,7 @@ func saveToken(token *oauth2.Token) error {
 	return os.WriteFile("token.json", data, 0600)
 }
 
-func loadToken() (*oauth2.Token, error) {
+func LoadToken() (*oauth2.Token, error) {
 	data, err := os.ReadFile("token.json")
 	if err != nil {
 		return nil, err

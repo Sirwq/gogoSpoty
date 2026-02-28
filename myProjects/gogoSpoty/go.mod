@@ -1,4 +1,4 @@
-module main
+module gogoSpoty
 
 go 1.25.6
 

@@ -1,4 +1,4 @@
-package main
+package spoty
 
 import (
 	"strings"
@@ -33,7 +33,7 @@ func (t *Track) String() string {
 	return s.String()
 }
 
-func updateTrack(t *Track, playing *spotify.CurrentlyPlaying) {
+func UpdateTrack(t *Track, playing *spotify.CurrentlyPlaying) {
 	t.mx.Lock()
 	t.Item = *playing.Item
 	t.Playing = playing.Playing

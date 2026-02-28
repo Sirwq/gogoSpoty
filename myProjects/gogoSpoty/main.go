@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"gogoSpoty/spoty"
 	"log"
 	"net/http"
 	"time"
@@ -21,20 +22,20 @@ func main() {
 	port := ":5111"
 	redirUrl := "http://127.0.0.1:5111/callback"
 
-	var t Track
+	var t spoty.Track
 	var waitTime time.Duration = 5
-	state, auth, ch := OAuthFlow(redirUrl)
+	state, auth, ch := spoty.OAuthFlow(redirUrl)
 	mux := http.NewServeMux()
 	setupRoutes(mux, &t, state, auth, ch)
 
 	go http.ListenAndServe(port, mux)
 	ctx := context.Background()
-	token, err := loadToken()
+	token, err := spoty.LoadToken()
 	if err != nil {
 		url := auth.AuthURL(state)
 		fmt.Println("Open this url: ", url)
 		token = <-ch
-		saveToken(token)
+		spoty.SaveToken(token)
 	}
 
 	client := spotify.New(auth.Client(ctx, token))
@@ -53,7 +54,7 @@ func main() {
 			}
 
 			if playing != nil && playing.Item != nil {
-				updateTrack(&t, playing)
+				spoty.UpdateTrack(&t, playing)
 			}
 
 			time.Sleep(waitTime * time.Second)
@@ -64,11 +65,11 @@ func main() {
 
 }
 
-func setupRoutes(mux *http.ServeMux, t *Track, state string, auth *spotifyauth.Authenticator, ch chan *oauth2.Token) {
+func setupRoutes(mux *http.ServeMux, t *spoty.Track, state string, auth *spotifyauth.Authenticator, ch chan *oauth2.Token) {
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	mux.HandleFunc("/widget", widgetHandler())
-	mux.HandleFunc("/api/current", trackHandler(t))
-	mux.HandleFunc("/callback", callbackHandler(state, auth, ch))
+	mux.HandleFunc("/widget", spoty.WidgetHandler())
+	mux.HandleFunc("/api/current", spoty.TrackHandler(t))
+	mux.HandleFunc("/callback", spoty.CallbackHandler(state, auth, ch))
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})
