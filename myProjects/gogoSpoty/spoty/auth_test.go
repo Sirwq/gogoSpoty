@@ -1,18 +1,19 @@
-package spoty
+package spoty_test
 
 import (
+	"gogoSpoty/spoty"
 	"os"
 	"testing"
 
 	"golang.org/x/oauth2"
 )
 
-func TestOAuthFlow(t *testing.T) {
+func TestAll(t *testing.T) {
 	redirUrl := "123:123:123"
 	r := "0.1.2.3.4"
 
-	state, auth, ch := OAuthFlow(redirUrl)
-	stateD, authD, chD := OAuthFlow(r)
+	state, auth, ch := spoty.OAuthFlow(redirUrl)
+	stateD, authD, chD := spoty.OAuthFlow(r)
 
 	if state == "" {
 		t.Errorf("state could't be empty: %v", state)
@@ -63,7 +64,7 @@ func TestOAuthFlow(t *testing.T) {
 		t.Fatalf("Error setting enviroment variable: %v", err)
 	}
 
-	EmptyState, EmptyAuth, EmptyCh := OAuthFlow(r)
+	EmptyState, EmptyAuth, EmptyCh := spoty.OAuthFlow(r)
 
 	if EmptyState == "" {
 		t.Errorf("state could't be empty: %v", state)
@@ -86,13 +87,13 @@ func TestOAuthFlow(t *testing.T) {
 		t.Fatalf("Error unsetting environment variable: %v", err)
 	}
 
-	err = SaveToken(emptyTok)
+	err = spoty.SaveToken(emptyTok)
 
 	if err != nil {
 		t.Errorf("Error %v while saving token: %v", err, emptyTok)
 	}
 
-	tok, err := LoadToken()
+	tok, err := spoty.LoadToken()
 
 	if err != nil {
 		t.Errorf("Error %v while loading token: %v", err, tok)
