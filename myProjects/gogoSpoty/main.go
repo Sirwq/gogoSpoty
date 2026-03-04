@@ -25,8 +25,6 @@ func main() {
 	var t spoty.Track
 	var waitTime time.Duration = 5
 	state, auth, ch := spoty.OAuthFlow(redirUrl)
-	defer close(ch)
-
 	mux := http.NewServeMux()
 	setupRoutes(mux, &t, state, auth, ch)
 
