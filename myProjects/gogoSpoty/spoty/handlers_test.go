@@ -69,9 +69,29 @@ func TestWidgetHandler(t *testing.T) {
 }
 
 func TestCallbackHandler(t *testing.T) {
-	ch := make(chan *oauth2.Token)
+	tokCh := make(chan *oauth2.Token)
 	state := "TestingState"
-	var auth *spotifyauth.Authenticator
+	auth := spotifyauth.New()
 
-	spoty.CallbackHandler(state, auth, ch)
+	query := "/callback?code=ABC123&state=TestingState"
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", query, nil)
+
+	spoty.CallbackHandler(state, auth, tokCh).ServeHTTP(rec, req)
+
+	if rec.Body == nil {
+		t.Errorf("got nil, expected value")
+	}
+
+	if rec.Result().StatusCode != http.StatusForbidden {
+		t.Errorf("got status code: %v, expected: 403", rec.Result().StatusCode)
+	}
+
+	body := strings.Split(rec.Body.String(), "\n")[0]
+
+	if body != "Auth failed" {
+		t.Errorf("Expected auth failure, got body:")
+	}
+
 }

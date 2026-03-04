@@ -26,6 +26,7 @@ func TrackHandler(t *Track) http.HandlerFunc {
 	}
 }
 
+// Path to a widget.html
 func WidgetHandler(path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, path)
@@ -33,6 +34,10 @@ func WidgetHandler(path string) http.HandlerFunc {
 }
 
 func CallbackHandler(state string, auth *spotifyauth.Authenticator, ch chan *oauth2.Token) http.HandlerFunc {
+	if auth == nil {
+		panic("Auth cannot be nil")
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := auth.Token(r.Context(), state, r)
 		if err != nil {
