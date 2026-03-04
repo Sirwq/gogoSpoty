@@ -67,7 +67,7 @@ func main() {
 
 func setupRoutes(mux *http.ServeMux, t *spoty.Track, state string, auth *spotifyauth.Authenticator, ch chan *oauth2.Token) {
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	mux.HandleFunc("/widget", spoty.WidgetHandler())
+	mux.HandleFunc("/widget", spoty.WidgetHandler("static/widget.html"))
 	mux.HandleFunc("/api/current", spoty.TrackHandler(t))
 	mux.HandleFunc("/callback", spoty.CallbackHandler(state, auth, ch))
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {

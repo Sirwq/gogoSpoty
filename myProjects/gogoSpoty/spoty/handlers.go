@@ -26,9 +26,9 @@ func TrackHandler(t *Track) http.HandlerFunc {
 	}
 }
 
-func WidgetHandler() http.HandlerFunc {
+func WidgetHandler(path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/widget.html")
+		http.ServeFile(w, r, path)
 	}
 }
 
