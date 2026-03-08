@@ -22,7 +22,7 @@ func OAuthFlow(redirUrl string) (string, *spotifyauth.Authenticator, chan *oauth
 		spotifyauth.WithClientSecret(os.Getenv("CLIENT_SECRET")),
 	)
 
-	state := generateRandState()
+	state := GenerateRandState()
 	ch := make(chan *oauth2.Token)
 	return state, auth, ch
 }
@@ -46,7 +46,7 @@ func LoadToken() (*oauth2.Token, error) {
 	return &token, err
 }
 
-func generateRandState() string {
+func GenerateRandState() string {
 	k := make([]byte, 32)
 	rand.Read(k)
 	return hex.EncodeToString(k)

@@ -1,69 +1,53 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"gogoSpoty/spoty"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 
-	"github.com/gempir/go-twitch-irc/v4"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	//redirUrl := "https://127.0.0.1:6111/"
-	//state := "RANDSTATE" // change later
-	username := "vvxshin"
-	oauth, err := GetTwitchToken()
 
-	if err != nil {
-		panic(err)
+	godotenv.Load(".env")
+
+	//port := ":6111"
+
+	clientID, ok := os.LookupEnv("CLIENT_ID")
+	if !ok {
+		log.Fatal("CLIEND_ID not set", "Read manual")
+	}
+	redirUrl, ok := os.LookupEnv("REDIRECT_URL")
+	if !ok {
+		log.Fatal("REDIRECT_URL not set", "Read manual")
 	}
 
-	client := twitch.NewClient(username, oauth)
+	redirUrl += "callback"
 
-	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
-		fmt.Println(message.Message)
-	})
+	fmt.Println(redirUrl)
 
-	client.Join("gogoBotik")
+	mux := http.NewServeMux()
+	go http.ListenAndServe(redirUrl+"/callback", mux)
 
-	err = client.Connect()
-
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(oauth)
-	fmt.Println("Success!")
-
+	generateTwitchAuthUrl(clientID, redirUrl)
 }
 
-func GetTwitchToken() (string, error) {
-	r := url.Values{}
-	r.Set("client_id", os.Getenv("CLIENT_ID"))
-	r.Set("client_secret", os.Getenv("CLIENT_SECRET"))
-	r.Set("grant_type", "client_credentials")
+func generateTwitchAuthUrl(clientID string, redirUrl string) {
+	state := spoty.GenerateRandState()
+	data := url.Values{}
 
-	req, err := http.NewRequest("POST", "https://id.twitch.tv/oauth2/token", strings.NewReader(r.Encode()))
+	data.Set("client_id", clientID)
+	data.Set("redirect_uri", redirUrl)
+	data.Set("response_type", "code")
+	data.Set("scope", "chat:read chat:edit")
+	data.Set("state", state)
 
-	if err != nil {
-		return "", err
-	}
+	encodedQuery := data.Encode()
+	authUrl := "https://id.twitch.tv/oauth2/authorize?" + encodedQuery
 
-	req.Header.Set("Content-Type", "application/x-www-form- urlencoded")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var result struct {
-		AccessToken string `json:"access_token"`
-	}
-	json.NewDecoder(resp.Body).Decode(&result)
-
-	return result.AccessToken, nil
+	fmt.Println("Open this url: ", authUrl)
 }
