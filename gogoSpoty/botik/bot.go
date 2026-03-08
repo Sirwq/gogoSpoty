@@ -14,30 +14,35 @@ import (
 func main() {
 
 	godotenv.Load(".env")
-
-	//port := ":6111"
+	state := spoty.GenerateRandState()
+	port := ":6111"
 
 	clientID, ok := os.LookupEnv("CLIENT_ID")
 	if !ok {
-		log.Fatal("CLIEND_ID not set", "Read manual")
+		log.Fatal("CLIENT_ID not set", "Read manual")
 	}
 	redirUrl, ok := os.LookupEnv("REDIRECT_URL")
 	if !ok {
 		log.Fatal("REDIRECT_URL not set", "Read manual")
 	}
 
-	redirUrl += "callback"
-
+	/* FOR DEBUG ONLY */
 	fmt.Println(redirUrl)
+	/* ------------- */
 
 	mux := http.NewServeMux()
-	go http.ListenAndServe(redirUrl+"/callback", mux)
+	mux.HandleFunc("/callback", callbackHandler(state))
 
-	generateTwitchAuthUrl(clientID, redirUrl)
+	fmt.Println("Open url:", generateTwitchAuthUrl(clientID, redirUrl, state))
+
+	fmt.Println("Server is running on", redirUrl)
+	go http.ListenAndServe(port, mux)
+
+	select {}
+
 }
 
-func generateTwitchAuthUrl(clientID string, redirUrl string) {
-	state := spoty.GenerateRandState()
+func generateTwitchAuthUrl(clientID string, redirUrl string, state string) string {
 	data := url.Values{}
 
 	data.Set("client_id", clientID)
@@ -49,5 +54,32 @@ func generateTwitchAuthUrl(clientID string, redirUrl string) {
 	encodedQuery := data.Encode()
 	authUrl := "https://id.twitch.tv/oauth2/authorize?" + encodedQuery
 
-	fmt.Println("Open this url: ", authUrl)
+	return authUrl
+}
+
+// add channeling later
+func callbackHandler(checkState string, ch chan string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+		state := r.URL.Query().Get("state")
+		err := r.URL.Query().Get("error")
+
+		if err != "" {
+			http.Error(w, "Auth failed", http.StatusBadRequest)
+			return
+		}
+
+		if code == "" {
+			http.Error(w, "code not found", http.StatusBadRequest)
+			return
+		}
+
+		if state != checkState {
+			http.Error(w, "state is falcificated", http.StatusExpectationFailed)
+			return
+		}
+
+		ch <- code
+		fmt.Fprintf(w, "Autorization code recieved!")
+	}
 }
