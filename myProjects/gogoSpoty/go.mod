@@ -3,6 +3,7 @@ module gogoSpoty
 go 1.25.6
 
 require (
+	github.com/gempir/go-twitch-irc/v4 v4.3.1
 	github.com/joho/godotenv v1.5.1
 	github.com/zmb3/spotify/v2 v2.4.3
 	golang.org/x/oauth2 v0.0.0-20210810183815-faf39c7919d5
