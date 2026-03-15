@@ -2,9 +2,11 @@ package spoty_test
 
 import (
 	"gogoSpoty/spoty"
+	"log"
 	"os"
 	"testing"
 
+	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 )
 
@@ -12,8 +14,20 @@ func TestAll(t *testing.T) {
 	redirUrl := "123:123:123"
 	r := "0.1.2.3.4"
 
-	state, auth, ch := spoty.OAuthFlow(redirUrl)
-	stateD, authD, chD := spoty.OAuthFlow(r)
+	godotenv.Load(".env")
+
+	clientIDspoty, ok := os.LookupEnv("CLIENT_ID")
+	if !ok {
+		log.Fatal("Spotify CLIENT_ID not set", "Read manual")
+	}
+
+	clientSecretSpoty, ok := os.LookupEnv("CLIENT_SECRET")
+	if !ok {
+		log.Fatal("Spotify CLIENT_SECRET not set", "Read manual")
+	}
+
+	state, auth, ch := spoty.OAuthFlow(redirUrl, clientIDspoty, clientSecretSpoty)
+	stateD, authD, chD := spoty.OAuthFlow(r, clientIDspoty, clientSecretSpoty)
 
 	if state == "" {
 		t.Errorf("state could't be empty: %v", state)

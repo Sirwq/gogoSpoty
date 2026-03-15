@@ -10,7 +10,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func OAuthFlow(redirUrl string) (string, *spotifyauth.Authenticator, chan *oauth2.Token) {
+func OAuthFlow(redirUrl string, clientID string, clientSecret string) (string, *spotifyauth.Authenticator, chan *oauth2.Token) {
 	auth := spotifyauth.New(
 		spotifyauth.WithRedirectURL(redirUrl),
 		spotifyauth.WithScopes(
@@ -18,8 +18,8 @@ func OAuthFlow(redirUrl string) (string, *spotifyauth.Authenticator, chan *oauth
 			spotifyauth.ScopePlaylistReadPrivate,
 			spotifyauth.ScopeUserReadCurrentlyPlaying,
 		),
-		spotifyauth.WithClientID(os.Getenv("CLIENT_ID")),
-		spotifyauth.WithClientSecret(os.Getenv("CLIENT_SECRET")),
+		spotifyauth.WithClientID(clientID),
+		spotifyauth.WithClientSecret(clientSecret),
 	)
 
 	state := GenerateRandState()
@@ -27,17 +27,17 @@ func OAuthFlow(redirUrl string) (string, *spotifyauth.Authenticator, chan *oauth
 	return state, auth, ch
 }
 
-func SaveToken(token *oauth2.Token) error {
+func SaveToken(token *oauth2.Token, tokName string) error {
 	data, err := json.Marshal(token)
 
 	if err != nil {
 		return err
 	}
-	return os.WriteFile("token.json", data, 0600)
+	return os.WriteFile(tokName, data, 0600)
 }
 
-func LoadToken() (*oauth2.Token, error) {
-	data, err := os.ReadFile("token.json")
+func LoadToken(tokName string) (*oauth2.Token, error) {
+	data, err := os.ReadFile(tokName)
 	if err != nil {
 		return nil, err
 	}
