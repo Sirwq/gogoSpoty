@@ -8,13 +8,40 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gempir/go-twitch-irc/v4"
 	"github.com/joho/godotenv"
 	"github.com/zmb3/spotify/v2"
 )
 
+type UserCooldowns struct {
+	sync.Mutex
+	m map[string]time.Time
+}
+
+func NewUserCooldowns() *UserCooldowns {
+	return &UserCooldowns{
+		m: map[string]time.Time{},
+	}
+}
+
+func (uc *UserCooldowns) Store(key string, time time.Time) {
+	uc.Mutex.Lock()
+	uc.m[key] = time
+	uc.Mutex.Unlock()
+}
+
+func (uc *UserCooldowns) Load(key string) (time.Time, bool) {
+	uc.Mutex.Lock()
+	v, ok := uc.m[key]
+	uc.Mutex.Unlock()
+	return v, ok
+}
+
 const prefSongReques = "!sr"
+const cooldown = 10
 
 func main() {
 
@@ -99,8 +126,11 @@ func main() {
 
 	clientTwitch := twitch.NewClient(username, "oauth:"+tt.AccessToken)
 
+	requestsCooldown := NewUserCooldowns()
+
 	clientTwitch.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		m := message.Message
+		uname := message.User.Name
 
 		m, ok = parseCommand(m, prefSongReques)
 		if !ok {
@@ -108,6 +138,18 @@ func main() {
 		}
 
 		if m == "" {
+			return
+		}
+
+		lastRequest, ok := requestsCooldown.Load(uname)
+
+		if !ok {
+			requestsCooldown.Store(uname, time.Time{})
+			lastRequest = time.Time{}
+		}
+
+		if time.Since(lastRequest) < cooldown*time.Second {
+			clientTwitch.Say(channelToJoin, "You're on cooldown, wait a bit!")
 			return
 		}
 
@@ -121,14 +163,22 @@ func main() {
 		if len(r.Tracks.Tracks) == 0 {
 			fmt.Println("Track not found") // Answer in caht later
 		} else {
+			fmt.Println(time.Since(lastRequest))
+
+			requestsCooldown.Store(uname, time.Now())
 			trackID := r.Tracks.Tracks[0].ID
 			trackName := r.Tracks.Tracks[0].Name
-			clientSpotify.QueueSong(ctx, trackID)
+			err := clientSpotify.QueueSong(ctx, trackID)
+
+			if err != nil {
+				clientTwitch.Say(channelToJoin, "Error while adding track")
+				return
+			}
+
 			answer := fmt.Sprintf("Found track: %s, Added to queue!", trackName)
 			clientTwitch.Say(channelToJoin, answer)
 			fmt.Println(trackID)
 		}
-
 	})
 
 	clientTwitch.Join(channelToJoin)
