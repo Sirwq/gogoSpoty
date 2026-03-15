@@ -6,6 +6,7 @@ import (
 	"gogoSpoty/spoty"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -22,20 +23,30 @@ func main() {
 	port := ":5111"
 	redirUrl := "http://127.0.0.1:5111/callback"
 
+	clientIDspoty, ok := os.LookupEnv("CLIENT_ID")
+	if !ok {
+		log.Fatal("Spotify CLIENT_ID not set", "Read manual")
+	}
+
+	clientSecretSpoty, ok := os.LookupEnv("CLIENT_SECRET")
+	if !ok {
+		log.Fatal("Spotify CLIENT_SECRET not set", "Read manual")
+	}
+
 	var t spoty.Track
 	var waitTime time.Duration = 5
-	state, auth, ch := spoty.OAuthFlow(redirUrl)
+	state, auth, ch := spoty.OAuthFlow(redirUrl, clientIDspoty, clientSecretSpoty)
 	mux := http.NewServeMux()
 	setupRoutes(mux, &t, state, auth, ch)
 
 	go http.ListenAndServe(port, mux)
 	ctx := context.Background()
-	token, err := spoty.LoadToken()
+	token, err := spoty.LoadToken("token.json")
 	if err != nil {
 		url := auth.AuthURL(state)
 		fmt.Println("Open this url: ", url)
 		token = <-ch
-		spoty.SaveToken(token)
+		spoty.SaveToken(token, "token.json")
 	}
 
 	client := spotify.New(auth.Client(ctx, token))

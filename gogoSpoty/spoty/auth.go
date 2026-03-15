@@ -16,6 +16,7 @@ func OAuthFlow(redirUrl string, clientID string, clientSecret string) (string, *
 		spotifyauth.WithScopes(
 			spotifyauth.ScopeUserReadPrivate,
 			spotifyauth.ScopePlaylistReadPrivate,
+			spotifyauth.ScopeUserModifyPlaybackState,
 			spotifyauth.ScopeUserReadCurrentlyPlaying,
 		),
 		spotifyauth.WithClientID(clientID),

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"gogoSpoty/spoty"
 	"log"
@@ -10,9 +11,10 @@ import (
 
 	"github.com/gempir/go-twitch-irc/v4"
 	"github.com/joho/godotenv"
+	"github.com/zmb3/spotify/v2"
 )
 
-const pref = "!sr"
+const prefSongReques = "!sr"
 
 func main() {
 
@@ -36,6 +38,37 @@ func main() {
 
 	tt, err := LoadToken()
 	// Loading Token is broken if token is old
+
+	/* TEMP CLIENT FOR TEST PURPOSES ONLY */
+	clientIDspoty, ok := os.LookupEnv("CLIENT_ID_SPOTY")
+	if !ok {
+		log.Fatal("Spotify CLIENT_ID_SPOTY not set, read manual")
+	}
+
+	clientSecretSpoty, ok := os.LookupEnv("CLIENT_SECRET_SPOTY")
+	if !ok {
+		log.Fatal("Spotify CLIENT_SECRET_SPOTY not set", "Read manual")
+	}
+
+	redirUrl := "http://127.0.0.1:5111/callback"
+
+	stateSpoty, auth, ch := spoty.OAuthFlow(redirUrl, clientIDspoty, clientSecretSpoty)
+	muxS := http.NewServeMux()
+	muxS.HandleFunc("/callback", spoty.CallbackHandler(stateSpoty, auth, ch))
+
+	go http.ListenAndServe(":5111", muxS)
+	ctx := context.Background()
+	token, err := spoty.LoadToken("Spoty.json")
+	if err != nil {
+		url := auth.AuthURL(stateSpoty)
+		fmt.Println("Open this url for spoty auth: ", url)
+		token = <-ch
+		spoty.SaveToken(token, "Spoty.json")
+	}
+
+	clientSpotify := spotify.New(auth.Client(ctx, token))
+
+	/* TEMP CLIENT FOR TEST PURPOSES ONLY */
 
 	if err != nil {
 
@@ -64,27 +97,57 @@ func main() {
 		SaveToken(tt)
 	}
 
-	client := twitch.NewClient(username, "oauth:"+tt.AccessToken)
+	clientTwitch := twitch.NewClient(username, "oauth:"+tt.AccessToken)
 
-	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
+	clientTwitch.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		m := message.Message
 
-		if !strings.HasPrefix(m, pref) {
+		m, ok = parseCommand(m, prefSongReques)
+		if !ok {
 			return
 		}
-		m = strings.TrimPrefix(m, pref)
-		m = strings.TrimSpace(m)
 
-		fmt.Println(m)
+		if m == "" {
+			return
+		}
+
+		r, err := clientSpotify.Search(ctx, m, spotify.SearchTypeTrack)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		if len(r.Tracks.Tracks) == 0 {
+			fmt.Println("Track not found") // Answer in caht later
+		} else {
+			trackID := r.Tracks.Tracks[0].ID
+			trackName := r.Tracks.Tracks[0].Name
+			clientSpotify.QueueSong(ctx, trackID)
+			answer := fmt.Sprintf("Found track: %s, Added to queue!", trackName)
+			clientTwitch.Say(channelToJoin, answer)
+			fmt.Println(trackID)
+		}
 
 	})
 
-	client.Join(channelToJoin)
+	clientTwitch.Join(channelToJoin)
 
 	fmt.Println("Bot is running")
-	err = client.Connect()
+	err = clientTwitch.Connect()
 	if err != nil {
 		panic(err)
 	}
+
+}
+
+func parseCommand(msg, prefix string) (string, bool) {
+	_, after, found := strings.Cut(msg, prefix)
+
+	if !found {
+		return "", false
+	}
+
+	return strings.TrimSpace(after), true
 
 }
