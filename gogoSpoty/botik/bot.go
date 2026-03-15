@@ -44,29 +44,8 @@ const prefSongReques = "!sr"
 const cooldown = 10
 
 func main() {
-
-	port := ":6111"
-	godotenv.Load(".env")
-
-	state := spoty.GenerateRandState()
-	tokenCh := make(chan string)
-	username, ok := os.LookupEnv("USERNAME")
-	if !ok {
-		log.Fatal("USERNAME not set", "Read manual")
-	}
-	channelToJoin, ok := os.LookupEnv("CHANNEL")
-	if !ok {
-		log.Fatal("CHANNEL not set", "Read manual")
-	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/callback", CallbackHandler(state, tokenCh))
-	go http.ListenAndServe(port, mux)
-
-	tt, err := LoadToken()
-	// Loading Token is broken if token is old
-
 	/* TEMP CLIENT FOR TEST PURPOSES ONLY */
+	godotenv.Load(".env")
 	clientIDspoty, ok := os.LookupEnv("CLIENT_ID_SPOTY")
 	if !ok {
 		log.Fatal("Spotify CLIENT_ID_SPOTY not set, read manual")
@@ -97,36 +76,16 @@ func main() {
 
 	/* TEMP CLIENT FOR TEST PURPOSES ONLY */
 
-	if err != nil {
-
-		clientID, ok := os.LookupEnv("CLIENT_ID")
-		if !ok {
-			log.Fatal("CLIENT_ID not set", "Read manual")
-		}
-		redirUrl, ok := os.LookupEnv("REDIRECT_URL")
-		if !ok {
-			log.Fatal("REDIRECT_URL not set", "Read manual")
-		}
-		clientSecret, ok := os.LookupEnv("CLIENT_SECRET")
-		if !ok {
-			log.Fatal("CLIENT_SECRET not set", "Read manual")
-		}
-
-		fmt.Println("Open url:", GenerateTwitchAuthUrl(clientID, redirUrl, state))
-		authState := <-tokenCh
-
-		tt, err = ExchangeCode(clientID, clientSecret, authState, redirUrl)
-
-		if err != nil {
-			panic(err)
-		}
-
-		SaveToken(tt)
-	}
-
-	clientTwitch := twitch.NewClient(username, "oauth:"+tt.AccessToken)
-
 	requestsCooldown := NewUserCooldowns()
+
+	twitchConf := LoadConfig()
+
+	clientTwitch, err := NewTwitchClient(twitchConf, "twitchToken.json")
+
+	if err != nil {
+		fmt.Println("error on twitch client creation: ", err)
+		return
+	}
 
 	clientTwitch.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		m := message.Message
@@ -149,7 +108,7 @@ func main() {
 		}
 
 		if time.Since(lastRequest) < cooldown*time.Second {
-			clientTwitch.Say(channelToJoin, "You're on cooldown, wait a bit!")
+			clientTwitch.Say(twitchConf.TwitchChannel, "You're on cooldown, wait a bit!")
 			return
 		}
 
@@ -171,17 +130,17 @@ func main() {
 			err := clientSpotify.QueueSong(ctx, trackID)
 
 			if err != nil {
-				clientTwitch.Say(channelToJoin, "Error while adding track")
+				clientTwitch.Say(twitchConf.TwitchChannel, "Error while adding track")
 				return
 			}
 
 			answer := fmt.Sprintf("Found track: %s, Added to queue!", trackName)
-			clientTwitch.Say(channelToJoin, answer)
+			clientTwitch.Say(twitchConf.TwitchChannel, answer)
 			fmt.Println(trackID)
 		}
 	})
 
-	clientTwitch.Join(channelToJoin)
+	clientTwitch.Join(twitchConf.TwitchChannel)
 
 	fmt.Println("Bot is running")
 	err = clientTwitch.Connect()
