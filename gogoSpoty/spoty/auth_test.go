@@ -14,6 +14,8 @@ func TestAll(t *testing.T) {
 	redirUrl := "123:123:123"
 	r := "0.1.2.3.4"
 
+	tokName := "testTok.json"
+
 	godotenv.Load(".env")
 
 	clientIDspoty, ok := os.LookupEnv("CLIENT_ID")
@@ -78,7 +80,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("Error setting enviroment variable: %v", err)
 	}
 
-	EmptyState, EmptyAuth, EmptyCh := spoty.OAuthFlow(r)
+	EmptyState, EmptyAuth, EmptyCh := spoty.OAuthFlow(r, clientIDspoty, clientSecretSpoty)
 
 	if EmptyState == "" {
 		t.Errorf("state could't be empty: %v", state)
@@ -101,17 +103,17 @@ func TestAll(t *testing.T) {
 		t.Fatalf("Error unsetting environment variable: %v", err)
 	}
 
-	err = spoty.SaveToken(emptyTok)
+	err = spoty.SaveToken(emptyTok, tokName)
 
 	if err != nil {
 		t.Errorf("Error %v while saving token: %v", err, emptyTok)
 	}
 
-	tok, err := spoty.LoadToken()
+	tok, err := spoty.LoadToken(tokName)
 
 	if err != nil {
 		t.Errorf("Error %v while loading token: %v", err, tok)
 	}
 
-	t.Cleanup(func() { os.Remove("token.json") })
+	t.Cleanup(func() { os.Remove(tokName) })
 }
