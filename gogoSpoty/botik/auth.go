@@ -3,17 +3,22 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"gogoSpoty/spoty"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/gempir/go-twitch-irc/v4"
 )
 
 type twitchToken struct {
 	AccessToken  string `json:"access_token"`
 	ExpiresIn    int    `json:"expires_in"`
 	RefreshToken string `json:"refresh_token"`
+	ObtainedAt   time.Time
 }
 
 func (tt twitchToken) String() string {
@@ -64,6 +69,8 @@ func ExchangeCode(clientID string, clientSecret string, code string, redirUrl st
 		}
 	}
 
+	tok.ObtainedAt = time.Now()
+
 	return &tok, nil
 }
 
@@ -93,21 +100,60 @@ func CallbackHandler(checkState string, ch chan string) http.HandlerFunc {
 	}
 }
 
-func SaveToken(tt *twitchToken) error {
+func SaveToken(tt *twitchToken, tokName string) error {
 	data, err := json.Marshal(tt)
 
 	if err != nil {
 		return err
 	}
-	return os.WriteFile("token.json", data, 0600)
+	return os.WriteFile(tokName, data, 0600)
 }
 
-func LoadToken() (*twitchToken, error) {
-	data, err := os.ReadFile("token.json")
+func LoadToken(tokName string) (*twitchToken, error) {
+	data, err := os.ReadFile(tokName)
 	if err != nil {
 		return nil, err
 	}
 	var token twitchToken
 	err = json.Unmarshal(data, &token)
 	return &token, err
+}
+
+func NewTwitchClient(config *TwitchConfig, tokName string) (*twitch.Client, error) {
+	tt, err := LoadToken(tokName)
+
+	state := spoty.GenerateRandState()
+	tokCH := make(chan string)
+
+	if err != nil || isExpired(tt.ObtainedAt, tt.ExpiresIn) {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/callback", CallbackHandler(state, tokCH))
+		go http.ListenAndServe(config.TwitchPort, mux)
+
+		fmt.Println("Open url:", GenerateTwitchAuthUrl(
+			config.TwitchClientID,
+			config.TwitchRedirectURL,
+			state),
+		)
+		twitchAuthState := <-tokCH
+
+		tt, err = ExchangeCode(
+			config.TwitchClientID,
+			config.TwitchClientSecret,
+			twitchAuthState,
+			config.TwitchRedirectURL,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		SaveToken(tt, tokName)
+	}
+
+	return twitch.NewClient(config.TwitchUsername, "oauth:"+tt.AccessToken), nil
+}
+
+func isExpired(obtaited time.Time, expires int) bool {
+	return time.Since(obtaited) > time.Duration(expires)*time.Second
 }

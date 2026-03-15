@@ -13,6 +13,7 @@ type TwitchConfig struct {
 	TwitchClientID     string
 	TwitchClientSecret string
 	TwitchRedirectURL  string
+	TwitchPort         string
 }
 
 func LoadConfig() *TwitchConfig {
@@ -34,6 +35,8 @@ func LoadConfig() *TwitchConfig {
 
 	conf.TwitchClientSecret, ok = os.LookupEnv("TWITCH_CLIENT_SECRET")
 	checkErr(ok, "twitch client secret not set")
+
+	conf.TwitchPort = ":6111"
 
 	return &conf
 }
