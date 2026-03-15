@@ -20,19 +20,19 @@ func LoadConfig() *TwitchConfig {
 	var conf TwitchConfig
 	godotenv.Load(".env")
 
-	conf.TwitchUsername, ok = os.LookupEnv("USERNAME")
+	conf.TwitchUsername, ok = os.LookupEnv("TWITCH_USERNAME")
 	checkErr(ok, "twitch username not set")
 
-	conf.TwitchChannel, ok = os.LookupEnv("CHANNEL")
+	conf.TwitchChannel, ok = os.LookupEnv("TWITCH_CHANNEL")
 	checkErr(ok, "twitch channel not set")
 
-	conf.TwitchClientID, ok = os.LookupEnv("CLIENT_ID")
+	conf.TwitchClientID, ok = os.LookupEnv("TWITCH_CLIENT_ID")
 	checkErr(ok, "twitch clientID not set")
 
-	conf.TwitchRedirectURL, ok = os.LookupEnv("REDIRECT_URL")
+	conf.TwitchRedirectURL, ok = os.LookupEnv("TWITCH_REDIRECT_URL")
 	checkErr(ok, "twitch redirect url not set")
 
-	conf.TwitchClientSecret, ok = os.LookupEnv("CLIENT_SECRET")
+	conf.TwitchClientSecret, ok = os.LookupEnv("TWITCH_CLIENT_SECRET")
 	checkErr(ok, "twitch client secret not set")
 
 	return &conf
