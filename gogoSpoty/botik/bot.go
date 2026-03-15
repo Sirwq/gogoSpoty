@@ -6,10 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gempir/go-twitch-irc/v4"
 	"github.com/joho/godotenv"
 )
+
+const pref = "!sr"
 
 func main() {
 
@@ -32,6 +35,7 @@ func main() {
 	go http.ListenAndServe(port, mux)
 
 	tt, err := LoadToken()
+	// Loading Token is broken if token is old
 
 	if err != nil {
 
@@ -63,7 +67,16 @@ func main() {
 	client := twitch.NewClient(username, "oauth:"+tt.AccessToken)
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
-		fmt.Println(message.Message)
+		m := message.Message
+
+		if !strings.HasPrefix(m, pref) {
+			return
+		}
+		m = strings.TrimPrefix(m, pref)
+		m = strings.TrimSpace(m)
+
+		fmt.Println(m)
+
 	})
 
 	client.Join(channelToJoin)
