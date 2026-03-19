@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"gogoSpoty/spoty"
@@ -128,7 +129,9 @@ func NewTwitchClient(config *TwitchConfig, tokName string) (*twitch.Client, erro
 	if err != nil || isExpired(tt.ObtainedAt, tt.ExpiresIn) {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/callback", CallbackHandler(state, tokCH))
-		go http.ListenAndServe(config.TwitchPort, mux)
+		srv := &http.Server{Addr: config.TwitchPort, Handler: mux}
+
+		go srv.ListenAndServe()
 
 		fmt.Println("Open url:", GenerateTwitchAuthUrl(
 			config.TwitchClientID,
@@ -136,6 +139,7 @@ func NewTwitchClient(config *TwitchConfig, tokName string) (*twitch.Client, erro
 			state),
 		)
 		twitchAuthState := <-tokCH
+		srv.Shutdown(context.Background())
 
 		tt, err = ExchangeCode(
 			config.TwitchClientID,

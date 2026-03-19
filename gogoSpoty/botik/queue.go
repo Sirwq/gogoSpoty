@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
 )
 
 func r() {
@@ -11,21 +10,6 @@ func r() {
 
 	client := NewRedisClient("1234")
 	queue := NewQueue(client)
-
-	req := SongRequest{
-		Usename:     "vvxshin",
-		TrackID:     "test123",
-		TrackName:   "Nobody",
-		TrackArtist: "Toxis",
-		RequestedAt: time.Now(),
-	}
-	req2 := SongRequest{
-		Usename:     "ASD",
-		TrackID:     "test123",
-		TrackName:   "SOmethingElse",
-		TrackArtist: "Who",
-		RequestedAt: time.Now(),
-	}
 
 	err := queue.Add(redisCTX, req)
 	if err != nil {
