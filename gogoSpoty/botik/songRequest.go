@@ -1,4 +1,4 @@
-package main
+package botik
 
 import (
 	"context"
@@ -7,17 +7,16 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/zmb3/spotify/v2"
 )
 
 const RedisKey = "song_queue"
 
 type SongRequest struct {
-	Usename     string                 `json:"username"`
-	TrackID     spotify.ID             `json:"track_id"`
-	TrackName   string                 `json:"track_name"`
-	TrackArtist []spotify.SimpleArtist `json:"track_artist"`
-	RequestedAt time.Time              `json:"requested_at"`
+	Usename     string    `json:"username"`
+	TrackID     string    `json:"track_id"`
+	TrackName   string    `json:"track_name"`
+	TrackArtist string    `json:"track_artist"`
+	RequestedAt time.Time `json:"requested_at"`
 }
 
 type Queue struct {

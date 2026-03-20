@@ -1,4 +1,4 @@
-package main
+package botik
 
 import (
 	"context"
@@ -13,7 +13,6 @@ type Bot struct {
 	queue     *Queue
 	cooldowns *UserCooldowns
 	channel   string
-	ctx       context.Context
 }
 
 func NewBot(
@@ -22,7 +21,6 @@ func NewBot(
 	queue *Queue,
 	cooldowns *UserCooldowns,
 	channel string,
-	ctx context.Context,
 ) *Bot {
 	return &Bot{
 		twitch:    twitchClient,
@@ -30,28 +28,16 @@ func NewBot(
 		queue:     queue,
 		cooldowns: cooldowns,
 		channel:   channel,
-		ctx:       ctx,
 	}
 }
 
-func (bot *Bot) Start() error {
+func (bot *Bot) Start(ctx context.Context) error {
+	bot.MessageHandler(ctx)
 	bot.Join()
 	err := bot.twitch.Connect()
-	bot.MessageHandler()
 	return err
 }
 
 func (bot *Bot) Join() {
 	bot.twitch.Join(bot.channel)
 }
-
-// 	twitchConf := LoadConfig()
-// 	requestsCooldown := NewUserCooldowns()
-// 	clientTwitch, err := NewTwitchClient(twitchConf, "twitchToken.json")
-
-// 	if err != nil {
-// 		fmt.Println("error on twitch client creation: ", err)
-// 		return
-// 	}
-
-// }

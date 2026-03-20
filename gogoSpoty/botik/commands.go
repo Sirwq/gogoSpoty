@@ -1,6 +1,7 @@
-package main
+package botik
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -11,7 +12,7 @@ import (
 
 const PREFIX_REQUEST = "!sr"
 
-func (bot *Bot) MessageHandler() {
+func (bot *Bot) MessageHandler(ctx context.Context) {
 	bot.twitch.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		m := message.Message
 		uname := message.User.Name
@@ -38,7 +39,7 @@ func (bot *Bot) MessageHandler() {
 		}
 
 		// Search request. Assumes that first entry is that what user wished
-		results, err := bot.spotify.Search(bot.ctx, m, spotify.SearchTypeTrack)
+		results, err := bot.spotify.Search(ctx, m, spotify.SearchTypeTrack)
 
 		if err != nil {
 			fmt.Println(err)
@@ -58,15 +59,25 @@ func (bot *Bot) MessageHandler() {
 			var req SongRequest = SongRequest{
 				Usename:     uname,
 				RequestedAt: reqTime,
-				TrackID:     results.Tracks.Tracks[0].ID,
+				TrackID:     string(results.Tracks.Tracks[0].ID),
 				TrackName:   results.Tracks.Tracks[0].Name,
-				TrackArtist: results.Tracks.Tracks[0].Artists,
 			}
 
-			if err != nil {
-				bot.twitch.Say(bot.channel, "Error while adding track")
-				return
+			var artists []string
+			if results.Tracks.Tracks[0].Artists != nil {
+				for _, artist := range results.Tracks.Tracks[0].Artists {
+					artists = append(artists, artist.Name)
+				}
 			}
+
+			req.TrackArtist = strings.Join(artists, ", ")
+
+			// if err != nil {
+			// 	bot.twitch.Say(bot.channel, "Error while adding track")
+			// 	return
+			// }
+
+			bot.queue.Add(ctx, req)
 
 			answer := fmt.Sprintf("Found track: %s, Added to queue!", req.TrackName)
 			bot.twitch.Say(bot.channel, answer)
