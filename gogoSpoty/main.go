@@ -3,85 +3,53 @@ package main
 import (
 	"context"
 	"fmt"
+	"gogoSpoty/botik"
 	"gogoSpoty/spoty"
-	"log"
 	"net/http"
-	"os"
 	"time"
-
-	"github.com/joho/godotenv"
-	"github.com/zmb3/spotify/v2"
-	spotifyauth "github.com/zmb3/spotify/v2/auth"
-	"golang.org/x/oauth2"
 )
 
 /* implement .ENV loading trough UI */
 
 func main() {
-	godotenv.Load(".env")
+	ctx := context.Background()
+
+	twitchConf := botik.LoadConfig()
+	twitchCooldowns := botik.NewUserCooldowns()
+	twitchClient, err := botik.NewTwitchClient(twitchConf, "twitchToken.json")
+
+	if err != nil {
+		fmt.Println("error on twitch client creation: ", err)
+		return
+	}
+
+	redisClient := botik.NewRedisClient("1234") // change pass later
+	redisQueue := botik.NewQueue(redisClient)
 
 	port := ":5111"
-	redirUrl := "http://127.0.0.1:5111/callback"
+	var duration time.Duration = 5
 
-	clientIDspoty, ok := os.LookupEnv("CLIENT_ID")
-	if !ok {
-		log.Fatal("Spotify CLIENT_ID not set", "Read manual")
+	spotifyConf := loadConfig()
+	track := &spoty.Track{}
+	mux := newServer(track)
+	spotifyClient := NewSpotifyClient(ctx, spotifyConf, mux, "SpotifyToken.json")
+
+	p := &Poller{
+		Client:   spotifyClient,
+		Track:    track,
+		Queue:    redisQueue,
+		Interval: duration,
 	}
 
-	clientSecretSpoty, ok := os.LookupEnv("CLIENT_SECRET")
-	if !ok {
-		log.Fatal("Spotify CLIENT_SECRET not set", "Read manual")
-	}
-
-	var t spoty.Track
-	var waitTime time.Duration = 5
-	state, auth, ch := spoty.OAuthFlow(redirUrl, clientIDspoty, clientSecretSpoty)
-	mux := http.NewServeMux()
-	setupRoutes(mux, &t, state, auth, ch)
-
+	go p.Start(ctx)
 	go http.ListenAndServe(port, mux)
-	ctx := context.Background()
-	token, err := spoty.LoadToken("token.json")
-	if err != nil {
-		url := auth.AuthURL(state)
-		fmt.Println("Open this url: ", url)
-		token = <-ch
-		spoty.SaveToken(token, "token.json")
-	}
+	bot := botik.NewBot(
+		twitchClient,
+		spotifyClient,
+		redisQueue,
+		twitchCooldowns,
+		twitchConf.TwitchChannel)
 
-	client := spotify.New(auth.Client(ctx, token))
-
-	fmt.Println(time.Now().Clock())
-	fmt.Println("Server is running...")
-
-	go func() {
-		for {
-			playing, err := client.PlayerCurrentlyPlaying(ctx)
-
-			if err != nil {
-				log.Printf("Error fetching track %v", err)
-				time.Sleep(waitTime * time.Second)
-				continue
-			}
-
-			if playing != nil && playing.Item != nil {
-				spoty.UpdateTrack(&t, playing)
-			}
-
-			time.Sleep(waitTime * time.Second)
-		}
-	}()
-
-	select {}
-
-}
-
-func setupRoutes(mux *http.ServeMux, t *spoty.Track, state string, auth *spotifyauth.Authenticator, ch chan *oauth2.Token) {
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	mux.HandleFunc("/widget", spoty.WidgetHandler("static/widget.html"))
-	mux.HandleFunc("/api/current", spoty.TrackHandler(t))
-	mux.HandleFunc("/callback", spoty.CallbackHandler(state, auth, ch))
-	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
-	})
+	bot.Start(ctx)
+	bot.Join()
 }

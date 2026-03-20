@@ -3,11 +3,14 @@ package botik
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
+
+var ErrQueueEmpty = errors.New("queue is empty")
 
 const RedisKey = "song_queue"
 
@@ -65,8 +68,13 @@ func (q *Queue) Remove(ctx context.Context) (SongRequest, error) {
 
 	v := q.client.LPop(ctx, RedisKey)
 
+	if v.Err() == redis.Nil {
+		return req, nil
+	}
+
 	if v.Err() != nil {
-		fmt.Println("Error")
+		fmt.Println("Error while removing from redis queue")
+		return req, v.Err()
 	}
 
 	data, err := v.Result()
@@ -106,4 +114,26 @@ func SongListPrinter(srlist []SongRequest) {
 	for _, song := range srlist {
 		fmt.Println(song)
 	}
+}
+
+func (q *Queue) Peek(ctx context.Context) (SongRequest, error) {
+	var s SongRequest
+
+	data, err := q.client.LIndex(ctx, RedisKey, 0).Result()
+
+	if err != redis.Nil {
+		return s, ErrQueueEmpty
+	}
+
+	if err != nil {
+		return s, err
+	}
+
+	err = json.Unmarshal([]byte(data), &s)
+	if err != nil {
+		return s, err
+	}
+
+	return s, nil
+
 }

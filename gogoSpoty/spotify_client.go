@@ -17,12 +17,12 @@ type spotifyConfig struct {
 	clientSecret string
 }
 
-func NewSpotifyClient(ctx context.Context, config *spotifyConfig, mux *http.ServeMux) *spotify.Client {
+func NewSpotifyClient(ctx context.Context, config *spotifyConfig, mux *http.ServeMux, tokName string) *spotify.Client {
 
 	redirUrl := "http://127.0.0.1:5111/callback"
 
 	state, auth, ch := spoty.OAuthFlow(redirUrl, config.clientID, config.clientSecret)
-	token, err := spoty.LoadToken("TwitchToken.json")
+	token, err := spoty.LoadToken(tokName)
 
 	if err != nil {
 		mux.HandleFunc("/callback", spoty.CallbackHandler(state, auth, ch))
@@ -30,7 +30,7 @@ func NewSpotifyClient(ctx context.Context, config *spotifyConfig, mux *http.Serv
 		url := auth.AuthURL(state)
 		fmt.Println("Open this url: ", url)
 		token = <-ch
-		spoty.SaveToken(token, "TwitchToken.json")
+		spoty.SaveToken(token, tokName)
 	}
 
 	return spotify.New(auth.Client(ctx, token))

@@ -53,9 +53,6 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 
 			reqTime := time.Now()
 			bot.cooldowns.Store(uname, reqTime)
-			// trackID := r.Tracks.Tracks[0].ID
-			// trackName := r.Tracks.Tracks[0].Name
-			// err := bot.spotify.QueueSong(bot.ctx, trackID)
 			var req SongRequest = SongRequest{
 				Usename:     uname,
 				RequestedAt: reqTime,
@@ -71,12 +68,6 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 			}
 
 			req.TrackArtist = strings.Join(artists, ", ")
-
-			// if err != nil {
-			// 	bot.twitch.Say(bot.channel, "Error while adding track")
-			// 	return
-			// }
-
 			bot.queue.Add(ctx, req)
 
 			answer := fmt.Sprintf("Found track: %s, Added to queue!", req.TrackName)
