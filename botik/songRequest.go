@@ -30,10 +30,10 @@ func (sr SongRequest) String() string {
 	return fmt.Sprintf("username: %s\nTrack: %s - %s\nRequested at: %v", sr.Usename, sr.TrackName, sr.TrackArtist, sr.RequestedAt)
 }
 
-func NewRedisClient(pass string) *redis.Client {
+func NewRedisClient(pass string, addr string) *redis.Client {
 	client := redis.NewClient(
 		&redis.Options{
-			Addr:     "localhost:6379",
+			Addr:     addr,
 			Password: pass,
 			DB:       0,
 		})

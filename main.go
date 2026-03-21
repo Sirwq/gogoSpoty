@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-/* implement .ENV loading trough UI */
-
 func main() {
 	ctx := context.Background()
 
@@ -23,16 +21,16 @@ func main() {
 		return
 	}
 
-	redisClient := botik.NewRedisClient("1234") // change pass later
+	redisClient := botik.NewRedisClient("1234", "localhost:6379") // change pass later
 	redisQueue := botik.NewQueue(redisClient)
 
-	port := ":5111"
 	var duration time.Duration = 5
 
 	spotifyConf := loadConfig()
 	track := &spoty.Track{}
 	mux := newServer(track)
-	spotifyClient := NewSpotifyClient(ctx, spotifyConf, mux, "SpotifyToken.json")
+
+	spotifyClient := NewSpotifyClient(ctx, spotifyConf, "SpotifyToken.json")
 
 	p := &Poller{
 		Client:   spotifyClient,
@@ -42,7 +40,8 @@ func main() {
 	}
 
 	go p.Start(ctx)
-	go http.ListenAndServe(port, mux)
+	go http.ListenAndServe(spotifyConf.Port, mux)
+
 	bot := botik.NewBot(
 		twitchClient,
 		spotifyClient,
@@ -51,5 +50,4 @@ func main() {
 		twitchConf.TwitchChannel)
 
 	bot.Start(ctx)
-	bot.Join()
 }

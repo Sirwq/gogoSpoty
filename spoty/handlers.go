@@ -13,9 +13,9 @@ import (
 func TrackHandler(t *Track) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.mx.Lock()
-		defer t.mx.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		data, err := json.Marshal(t)
+		t.mx.Unlock()
 
 		if err != nil {
 			http.Error(w, "StatusUnprocessableEntity", http.StatusUnprocessableEntity)

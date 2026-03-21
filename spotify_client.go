@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"gogoSpoty/helpers"
 	"gogoSpoty/spoty"
-	"log"
 	"net/http"
 	"os"
 
@@ -15,21 +15,25 @@ import (
 type spotifyConfig struct {
 	clientID     string
 	clientSecret string
+	redirectURL  string
+	Port         string
 }
 
-func NewSpotifyClient(ctx context.Context, config *spotifyConfig, mux *http.ServeMux, tokName string) *spotify.Client {
-
-	redirUrl := "http://127.0.0.1:5111/callback"
-
-	state, auth, ch := spoty.OAuthFlow(redirUrl, config.clientID, config.clientSecret)
+func NewSpotifyClient(ctx context.Context, config *spotifyConfig, tokName string) *spotify.Client {
+	state, auth, ch := spoty.OAuthFlow(config.redirectURL, config.clientID, config.clientSecret)
 	token, err := spoty.LoadToken(tokName)
 
 	if err != nil {
+		mux := http.NewServeMux()
 		mux.HandleFunc("/callback", spoty.CallbackHandler(state, auth, ch))
-		go http.ListenAndServe(":5111", mux)
+		srv := &http.Server{Addr: config.Port, Handler: mux}
+
+		go srv.ListenAndServe()
+
 		url := auth.AuthURL(state)
 		fmt.Println("Open this url: ", url)
 		token = <-ch
+		srv.Shutdown(ctx)
 		spoty.SaveToken(token, tokName)
 	}
 
@@ -42,15 +46,14 @@ func loadConfig() *spotifyConfig {
 	godotenv.Load(".env")
 
 	conf.clientID, ok = os.LookupEnv("CLIENT_ID_SPOTY")
-	checkErr(ok, "CLIENT_ID_SPOTY not set")
+	helpers.CheckErr(ok, "CLIENT_ID_SPOTY not set")
 
 	conf.clientSecret, ok = os.LookupEnv("CLIENT_SECRET_SPOTY")
-	checkErr(ok, "Spotify CLIENT_SECRET not set")
-	return &conf
-}
+	helpers.CheckErr(ok, "CLIENT_SECRET_SPOTY not set")
 
-func checkErr(ok bool, msg string) {
-	if !ok {
-		log.Fatal(msg, "\nRead manual")
-	}
+	conf.redirectURL, ok = os.LookupEnv("REDIRECT_URL_SPOTY")
+	helpers.CheckErr(ok, "REDIRECT_URL_SPOTY not set")
+
+	conf.Port = ":5111"
+	return &conf
 }

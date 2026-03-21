@@ -1,7 +1,7 @@
 package botik
 
 import (
-	"log"
+	"gogoSpoty/helpers"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -22,27 +22,21 @@ func LoadConfig() *TwitchConfig {
 	godotenv.Load(".env")
 
 	conf.TwitchUsername, ok = os.LookupEnv("TWITCH_USERNAME")
-	checkErr(ok, "twitch username not set")
+	helpers.CheckErr(ok, "twitch username not set")
 
 	conf.TwitchChannel, ok = os.LookupEnv("TWITCH_CHANNEL")
-	checkErr(ok, "twitch channel not set")
+	helpers.CheckErr(ok, "twitch channel not set")
 
 	conf.TwitchClientID, ok = os.LookupEnv("TWITCH_CLIENT_ID")
-	checkErr(ok, "twitch clientID not set")
+	helpers.CheckErr(ok, "twitch clientID not set")
 
 	conf.TwitchRedirectURL, ok = os.LookupEnv("TWITCH_REDIRECT_URL")
-	checkErr(ok, "twitch redirect url not set")
+	helpers.CheckErr(ok, "twitch redirect url not set")
 
 	conf.TwitchClientSecret, ok = os.LookupEnv("TWITCH_CLIENT_SECRET")
-	checkErr(ok, "twitch client secret not set")
+	helpers.CheckErr(ok, "twitch client secret not set")
 
 	conf.TwitchPort = ":6111"
 
 	return &conf
-}
-
-func checkErr(ok bool, msg string) {
-	if !ok {
-		log.Fatal(msg, "\nRead manual")
-	}
 }
