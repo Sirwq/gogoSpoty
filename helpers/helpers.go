@@ -1,9 +1,16 @@
 package helpers
 
-import "log"
+import (
+	"log"
+	"log/slog"
+)
 
-func CheckErr(ok bool, msg string) {
+func CheckErrFatal(ok bool, msg string) {
 	if !ok {
 		log.Fatal(msg, "\nRead manual")
 	}
+}
+
+func LogErr(msg string) {
+	slog.Error(msg)
 }

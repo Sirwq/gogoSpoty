@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"gogoSpoty/helpers"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -15,7 +15,7 @@ var ErrQueueEmpty = errors.New("queue is empty")
 const RedisKey = "song_queue"
 
 type SongRequest struct {
-	Usename     string    `json:"username"`
+	Username    string    `json:"username"`
 	TrackID     string    `json:"track_id"`
 	TrackName   string    `json:"track_name"`
 	TrackArtist string    `json:"track_artist"`
@@ -24,10 +24,6 @@ type SongRequest struct {
 
 type Queue struct {
 	client *redis.Client
-}
-
-func (sr SongRequest) String() string {
-	return fmt.Sprintf("username: %s\nTrack: %s - %s\nRequested at: %v", sr.Usename, sr.TrackName, sr.TrackArtist, sr.RequestedAt)
 }
 
 func NewRedisClient(pass string, addr string) *redis.Client {
@@ -49,14 +45,14 @@ func (q *Queue) Add(ctx context.Context, req SongRequest) error {
 	data, err := json.Marshal(req)
 
 	if err != nil {
-		fmt.Printf("Error marshaling SONG REQUEST for REDIS")
+		helpers.LogErr("Error marshaling SONG REQUEST for REDIS")
 		return err
 	}
 
 	v := q.client.RPush(ctx, RedisKey, data)
 
 	if v.Err() != nil {
-		fmt.Println("Error while pushing to REDIS QUEUE")
+		helpers.LogErr("Error while pushing to REDIS QUEUE")
 		return v.Err()
 	}
 
@@ -73,7 +69,7 @@ func (q *Queue) Remove(ctx context.Context) (SongRequest, error) {
 	}
 
 	if v.Err() != nil {
-		fmt.Println("Error while removing from redis queue")
+		helpers.LogErr("Error while removing from redis queue")
 		return req, v.Err()
 	}
 
@@ -108,12 +104,6 @@ func (q *Queue) Read(ctx context.Context) ([]SongRequest, error) {
 		result = append(result, req)
 	}
 	return result, nil
-}
-
-func SongListPrinter(srlist []SongRequest) {
-	for _, song := range srlist {
-		fmt.Println(song)
-	}
 }
 
 func (q *Queue) Peek(ctx context.Context) (SongRequest, error) {

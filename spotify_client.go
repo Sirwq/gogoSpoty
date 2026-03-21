@@ -46,13 +46,13 @@ func loadConfig() *spotifyConfig {
 	godotenv.Load(".env")
 
 	conf.clientID, ok = os.LookupEnv("CLIENT_ID_SPOTY")
-	helpers.CheckErr(ok, "CLIENT_ID_SPOTY not set")
+	helpers.CheckErrFatal(ok, "CLIENT_ID_SPOTY not set")
 
 	conf.clientSecret, ok = os.LookupEnv("CLIENT_SECRET_SPOTY")
-	helpers.CheckErr(ok, "CLIENT_SECRET_SPOTY not set")
+	helpers.CheckErrFatal(ok, "CLIENT_SECRET_SPOTY not set")
 
 	conf.redirectURL, ok = os.LookupEnv("REDIRECT_URL_SPOTY")
-	helpers.CheckErr(ok, "REDIRECT_URL_SPOTY not set")
+	helpers.CheckErrFatal(ok, "REDIRECT_URL_SPOTY not set")
 
 	conf.Port = ":5111"
 	return &conf

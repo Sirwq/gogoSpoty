@@ -52,7 +52,7 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 			reqTime := time.Now()
 			bot.cooldowns.Store(uname, reqTime)
 			var req SongRequest = SongRequest{
-				Usename:     uname,
+				Username:    uname,
 				RequestedAt: reqTime,
 				TrackID:     string(results.Tracks.Tracks[0].ID),
 				TrackName:   results.Tracks.Tracks[0].Name,
