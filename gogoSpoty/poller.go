@@ -11,10 +11,11 @@ import (
 )
 
 type Poller struct {
-	Client   *spotify.Client
-	Track    *spoty.Track
-	Queue    *botik.Queue
-	Interval time.Duration
+	Client       *spotify.Client
+	Track        *spoty.Track
+	Queue        *botik.Queue
+	Interval     time.Duration
+	LastQueuedID string
 }
 
 func (p *Poller) Start(ctx context.Context) {
@@ -24,33 +25,53 @@ func (p *Poller) Start(ctx context.Context) {
 
 			if err != nil {
 				log.Printf("Error fetching track %v\n", err)
-				time.Sleep(p.Interval * time.Second)
+				p.wait()
 				continue
 			}
 
+			if playing == nil || playing.Item == nil {
+				p.wait()
+				continue
+			}
+
+			spoty.UpdateTrack(p.Track, playing)
 			SongRequest, err := p.Queue.Peek(ctx)
 
 			if err == botik.ErrQueueEmpty {
-
+				p.wait()
+				continue
 			} else if err != nil {
 				log.Printf("Error in poller: %v\n", err)
+				p.wait()
+				continue
 			}
 
-			if playing != nil && playing.Item != nil {
-				spoty.UpdateTrack(p.Track, playing)
-				if playing.Item.ID == spotify.ID(SongRequest.TrackID) {
-					_, err := p.Queue.Remove(ctx)
-					if err != nil {
-						log.Printf("MOZG UMER ERRROR CHANGE LATER")
-					}
-				} else {
-					// song, err := p.Queue.Remove(ctx)
-
-					// err = spotify.Client.QueueS
-				}
+			if playing.Item.ID == spotify.ID(SongRequest.TrackID) {
+				_, err := p.Queue.Remove(ctx)
+				logErr(err, "Error removing from queue in poller")
+				p.wait()
+				continue
 			}
 
-			time.Sleep(p.Interval * time.Second)
+			if p.LastQueuedID == SongRequest.TrackID {
+				p.wait()
+				continue
+			}
+
+			err = p.Client.QueueSong(ctx, spotify.ID(SongRequest.TrackID))
+			p.LastQueuedID = SongRequest.TrackID
+			logErr(err, "Error queuing song in poller")
+			p.wait()
 		}
 	}()
+}
+
+func logErr(err error, msg string) {
+	if err != nil {
+		log.Println(msg, "Error:"+err.Error())
+	}
+}
+
+func (p *Poller) wait() {
+	time.Sleep(p.Interval * time.Second)
 }
