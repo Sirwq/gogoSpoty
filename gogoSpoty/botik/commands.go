@@ -49,8 +49,6 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 		if len(results.Tracks.Tracks) == 0 {
 			fmt.Println("Track not found") // Answer in caht later
 		} else {
-			fmt.Println(time.Since(lastRequest))
-
 			reqTime := time.Now()
 			bot.cooldowns.Store(uname, reqTime)
 			var req SongRequest = SongRequest{
@@ -72,7 +70,6 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 
 			answer := fmt.Sprintf("Found track: %s, Added to queue!", req.TrackName)
 			bot.twitch.Say(bot.channel, answer)
-			fmt.Println(req.TrackID)
 		}
 	})
 

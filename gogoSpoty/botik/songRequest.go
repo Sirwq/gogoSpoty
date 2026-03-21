@@ -121,7 +121,7 @@ func (q *Queue) Peek(ctx context.Context) (SongRequest, error) {
 
 	data, err := q.client.LIndex(ctx, RedisKey, 0).Result()
 
-	if err != redis.Nil {
+	if err == redis.Nil {
 		return s, ErrQueueEmpty
 	}
 
