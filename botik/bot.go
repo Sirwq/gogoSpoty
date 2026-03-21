@@ -41,3 +41,7 @@ func (bot *Bot) Start(ctx context.Context) error {
 func (bot *Bot) Join() {
 	bot.twitch.Join(bot.channel)
 }
+
+func (bot *Bot) Disconnect() {
+	bot.twitch.Disconnect()
+}
