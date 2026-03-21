@@ -1,8 +1,8 @@
-package botik
+package bot
 
 import (
 	"context"
-	"gogoSpoty/helpers"
+	"log"
 	"strings"
 	"time"
 
@@ -42,7 +42,7 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 		results, err := bot.spotify.Search(ctx, m, spotify.SearchTypeTrack)
 
 		if err != nil {
-			helpers.LogErr(err.Error())
+			log.Println(err)
 			return
 		}
 

@@ -1,10 +1,10 @@
-package spoty
+package widget
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"os"
+
+	"gogoSpoty/internal/crypto"
 
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"golang.org/x/oauth2"
@@ -23,7 +23,7 @@ func OAuthFlow(redirUrl string, clientID string, clientSecret string) (string, *
 		spotifyauth.WithClientSecret(clientSecret),
 	)
 
-	state := GenerateRandState()
+	state := crypto.GenerateRandState()
 	ch := make(chan *oauth2.Token)
 	return state, auth, ch
 }
@@ -45,10 +45,4 @@ func LoadToken(tokName string) (*oauth2.Token, error) {
 	var token oauth2.Token
 	err = json.Unmarshal(data, &token)
 	return &token, err
-}
-
-func GenerateRandState() string {
-	k := make([]byte, 32)
-	rand.Read(k)
-	return hex.EncodeToString(k)
 }

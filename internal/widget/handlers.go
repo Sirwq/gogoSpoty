@@ -1,4 +1,4 @@
-package spoty
+package widget
 
 import (
 	"encoding/json"

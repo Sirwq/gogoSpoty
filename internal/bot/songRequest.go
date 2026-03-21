@@ -1,11 +1,12 @@
-package botik
+package bot
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gogoSpoty/helpers"
+	"gogoSpoty/internal/config"
+	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -31,11 +32,11 @@ type Queue struct {
 	client *redis.Client
 }
 
-func NewRedisClient(pass string, addr string) *redis.Client {
+func NewRedisClient(conf *config.RedisConfig) *redis.Client {
 	client := redis.NewClient(
 		&redis.Options{
-			Addr:     addr,
-			Password: pass,
+			Addr:     conf.Addr,
+			Password: conf.Password,
 			DB:       0,
 		})
 
@@ -50,14 +51,14 @@ func (q *Queue) Add(ctx context.Context, req SongRequest) error {
 	data, err := json.Marshal(req)
 
 	if err != nil {
-		helpers.LogErr("Error marshaling SONG REQUEST for REDIS")
+		log.Println(err)
 		return err
 	}
 
 	v := q.client.RPush(ctx, RedisKey, data)
 
 	if v.Err() != nil {
-		helpers.LogErr("Error while pushing to REDIS QUEUE")
+		log.Println("Failed to push in REDIS queue")
 		return v.Err()
 	}
 
@@ -74,7 +75,7 @@ func (q *Queue) Remove(ctx context.Context) (SongRequest, error) {
 	}
 
 	if v.Err() != nil {
-		helpers.LogErr("Error while removing from redis queue")
+		log.Println("Failed to remove from REDIS queue")
 		return req, v.Err()
 	}
 

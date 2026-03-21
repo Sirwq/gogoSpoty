@@ -1,9 +1,9 @@
-package main
+package poller
 
 import (
 	"context"
-	"gogoSpoty/botik"
-	"gogoSpoty/spoty"
+	"gogoSpoty/internal/bot"
+	"gogoSpoty/internal/widget"
 	"log"
 	"time"
 
@@ -12,13 +12,13 @@ import (
 
 type Poller struct {
 	Client       *spotify.Client
-	Track        *spoty.Track
-	Queue        *botik.Queue
+	Track        *widget.Track
+	Queue        *bot.Queue
 	Interval     time.Duration
 	LastQueuedID string
 }
 
-func NewPoller(client *spotify.Client, track *spoty.Track, q *botik.Queue, interval time.Duration) *Poller {
+func NewPoller(client *spotify.Client, track *widget.Track, q *bot.Queue, interval time.Duration) *Poller {
 	return &Poller{
 		Client:   client,
 		Track:    track,
@@ -45,10 +45,10 @@ func (p *Poller) Start(ctx context.Context) {
 				continue
 			}
 
-			spoty.UpdateTrack(p.Track, playing)
+			widget.UpdateTrack(p.Track, playing)
 			SongRequest, err := p.Queue.Peek(ctx)
 
-			if err == botik.ErrQueueEmpty {
+			if err == bot.ErrQueueEmpty {
 				continue
 			} else if err != nil {
 				log.Printf("Error in poller: %v\n", err)

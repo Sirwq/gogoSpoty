@@ -1,4 +1,4 @@
-package botik
+package bot
 
 import (
 	"context"

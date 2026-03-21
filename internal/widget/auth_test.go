@@ -1,7 +1,6 @@
-package spoty_test
+package widget
 
 import (
-	"gogoSpoty/spoty"
 	"log"
 	"os"
 	"testing"
@@ -28,8 +27,8 @@ func TestAll(t *testing.T) {
 		log.Fatal("Spotify CLIENT_SECRET not set", "Read manual")
 	}
 
-	state, auth, ch := spoty.OAuthFlow(redirUrl, clientIDspoty, clientSecretSpoty)
-	stateD, authD, chD := spoty.OAuthFlow(r, clientIDspoty, clientSecretSpoty)
+	state, auth, ch := OAuthFlow(redirUrl, clientIDspoty, clientSecretSpoty)
+	stateD, authD, chD := OAuthFlow(r, clientIDspoty, clientSecretSpoty)
 
 	if state == "" {
 		t.Errorf("state could't be empty: %v", state)
@@ -80,7 +79,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("Error setting enviroment variable: %v", err)
 	}
 
-	EmptyState, EmptyAuth, EmptyCh := spoty.OAuthFlow(r, clientIDspoty, clientSecretSpoty)
+	EmptyState, EmptyAuth, EmptyCh := OAuthFlow(r, clientIDspoty, clientSecretSpoty)
 
 	if EmptyState == "" {
 		t.Errorf("state could't be empty: %v", state)
@@ -103,13 +102,13 @@ func TestAll(t *testing.T) {
 		t.Fatalf("Error unsetting environment variable: %v", err)
 	}
 
-	err = spoty.SaveToken(emptyTok, tokName)
+	err = SaveToken(emptyTok, tokName)
 
 	if err != nil {
 		t.Errorf("Error %v while saving token: %v", err, emptyTok)
 	}
 
-	tok, err := spoty.LoadToken(tokName)
+	tok, err := LoadToken(tokName)
 
 	if err != nil {
 		t.Errorf("Error %v while loading token: %v", err, tok)

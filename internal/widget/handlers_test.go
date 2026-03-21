@@ -1,8 +1,7 @@
-package spoty_test
+package widget
 
 import (
 	"encoding/json"
-	"gogoSpoty/spoty"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,12 +12,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var track spoty.Track
+var track Track
 
 func TestTrackHandler(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/api/current", nil)
-	spoty.TrackHandler(&track).ServeHTTP(rec, req)
+	TrackHandler(&track).ServeHTTP(rec, req)
 
 	if rec.Result().StatusCode != http.StatusOK {
 		t.Errorf("got status code: %v, expected: 200", rec.Result().StatusCode)
@@ -28,7 +27,7 @@ func TestTrackHandler(t *testing.T) {
 		t.Errorf("wrong content type: %v", rec.Header().Get("Content-Type"))
 	}
 
-	var result spoty.Track
+	var result Track
 	err := json.Unmarshal(rec.Body.Bytes(), &result)
 	if err != nil {
 		t.Errorf("invalid JSON: %v", err)
@@ -47,7 +46,7 @@ func TestWidgetHandler(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/widget", nil)
-	spoty.WidgetHandler("../static/widget.html").ServeHTTP(rec, req)
+	WidgetHandler("../static/widget.html").ServeHTTP(rec, req)
 
 	location := rec.Header().Get("Location")
 	t.Log("Redirect to:", location)
@@ -78,7 +77,7 @@ func TestCallbackHandler(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", query, nil)
 
-	spoty.CallbackHandler(state, auth, tokCh).ServeHTTP(rec, req)
+	CallbackHandler(state, auth, tokCh).ServeHTTP(rec, req)
 
 	if rec.Body == nil {
 		t.Errorf("got nil, expected value")

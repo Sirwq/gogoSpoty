@@ -1,10 +1,11 @@
-package botik
+package bot
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gogoSpoty/spoty"
+	"gogoSpoty/internal/config"
+	"gogoSpoty/internal/crypto"
 	"io"
 	"net/http"
 	"net/url"
@@ -120,32 +121,32 @@ func LoadToken(tokName string) (*twitchToken, error) {
 	return &token, err
 }
 
-func NewTwitchClient(config *TwitchConfig, tokName string) (*twitch.Client, error) {
+func NewTwitchClient(config *config.TwitchConfig, tokName string) (*twitch.Client, error) {
 	tt, err := LoadToken(tokName)
 
-	state := spoty.GenerateRandState()
+	state := crypto.GenerateRandState()
 	tokCH := make(chan string)
 
 	if err != nil || isExpired(tt.ObtainedAt, tt.ExpiresIn) {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/callback", CallbackHandler(state, tokCH))
-		srv := &http.Server{Addr: config.TwitchPort, Handler: mux}
+		srv := &http.Server{Addr: config.Port, Handler: mux}
 
 		go srv.ListenAndServe()
 
 		fmt.Println("Open url:", GenerateTwitchAuthUrl(
-			config.TwitchClientID,
-			config.TwitchRedirectURL,
+			config.ClientID,
+			config.RedirectURL,
 			state),
 		)
 		twitchAuthState := <-tokCH
 		srv.Shutdown(context.Background())
 
 		tt, err = ExchangeCode(
-			config.TwitchClientID,
-			config.TwitchClientSecret,
+			config.ClientID,
+			config.ClientSecret,
 			twitchAuthState,
-			config.TwitchRedirectURL,
+			config.RedirectURL,
 		)
 
 		if err != nil {
@@ -154,12 +155,12 @@ func NewTwitchClient(config *TwitchConfig, tokName string) (*twitch.Client, erro
 
 		err = SaveToken(tt, tokName)
 		if err != nil {
-			return twitch.NewClient(config.TwitchUsername, "oauth:"+tt.AccessToken), err
+			return twitch.NewClient(config.Username, "oauth:"+tt.AccessToken), err
 		}
 
 	}
 
-	return twitch.NewClient(config.TwitchUsername, "oauth:"+tt.AccessToken), nil
+	return twitch.NewClient(config.Username, "oauth:"+tt.AccessToken), nil
 }
 
 func isExpired(obtaited time.Time, expires int) bool {
