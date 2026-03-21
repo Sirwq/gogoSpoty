@@ -59,17 +59,13 @@ func main() {
 	log.Printf("Listening on: %v", spotifyConf.redirectURL)
 	go bot.Start(ctx)
 
-	select {
-	case <-ctx.Done():
-	case err = <-errCh:
-		log.Println("Shutting down...")
+	<-ctx.Done()
+	log.Println("Shutting down...")
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), pollInterval)
-		defer cancel()
-
-		srv.Shutdown(shutdownCtx)
-		redisClient.Close()
-		bot.Disconnect()
-		log.Println("Stopped")
-	}
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), pollInterval)
+	defer cancel()
+	srv.Shutdown(shutdownCtx)
+	redisClient.Close()
+	bot.Disconnect()
+	log.Println("Stopped")
 }
