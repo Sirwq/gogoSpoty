@@ -11,18 +11,22 @@ import (
 	"time"
 )
 
+const pollInterval = 5 * time.Second
+
 func main() {
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	errCh := make(chan error, 1)
+
 	twitchConf := botik.LoadConfig()
 	twitchCooldowns := botik.NewUserCooldowns()
 	twitchClient, err := botik.NewTwitchClient(twitchConf, "twitchToken.json")
 
 	if err != nil {
-		log.Fatalf("Error on twitch client creation: %v", err)
+		log.Fatalf("Failed to create twitch client: %v", err)
 	}
 
 	redisClient := botik.NewRedisClient("1234", "localhost:6379") // change pass later
@@ -42,9 +46,7 @@ func main() {
 	}
 
 	go func() {
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("HTTP server error: %v", err)
-		}
+		errCh <- srv.ListenAndServe()
 	}()
 
 	bot := botik.NewBot(
@@ -57,14 +59,17 @@ func main() {
 	log.Printf("Listening on: %v", spotifyConf.redirectURL)
 	go bot.Start(ctx)
 
-	<-ctx.Done()
-	log.Println("Shutting down...")
+	select {
+	case <-ctx.Done():
+	case err = <-errCh:
+		log.Println("Shutting down...")
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), pollInterval)
+		defer cancel()
 
-	srv.Shutdown(shutdownCtx)
-	redisClient.Close()
-	bot.Disconnect()
-	log.Println("Stopped")
+		srv.Shutdown(shutdownCtx)
+		redisClient.Close()
+		bot.Disconnect()
+		log.Println("Stopped")
+	}
 }
