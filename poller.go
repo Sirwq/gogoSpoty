@@ -18,6 +18,15 @@ type Poller struct {
 	LastQueuedID string
 }
 
+func NewPoller(client *spotify.Client, track *spoty.Track, q *botik.Queue, interval time.Duration) *Poller {
+	return &Poller{
+		Client:   client,
+		Track:    track,
+		Queue:    q,
+		Interval: interval,
+	}
+}
+
 func (p *Poller) Start(ctx context.Context) {
 	for {
 		playing, err := p.Client.PlayerCurrentlyPlaying(ctx)

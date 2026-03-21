@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"gogoSpoty/botik"
+	"gogoSpoty/helpers"
 	"gogoSpoty/spoty"
 	"net/http"
 	"time"
@@ -17,7 +17,7 @@ func main() {
 	twitchClient, err := botik.NewTwitchClient(twitchConf, "twitchToken.json")
 
 	if err != nil {
-		fmt.Println("error on twitch client creation: ", err)
+		helpers.CheckErrFatal(false, "Error on twitch client creation")
 		return
 	}
 
@@ -31,13 +31,7 @@ func main() {
 	mux := newServer(track)
 
 	spotifyClient := NewSpotifyClient(ctx, spotifyConf, "SpotifyToken.json")
-
-	p := &Poller{
-		Client:   spotifyClient,
-		Track:    track,
-		Queue:    redisQueue,
-		Interval: duration,
-	}
+	p := NewPoller(spotifyClient, track, redisQueue, duration)
 
 	go p.Start(ctx)
 	go http.ListenAndServe(spotifyConf.Port, mux)
@@ -50,4 +44,5 @@ func main() {
 		twitchConf.TwitchChannel)
 
 	bot.Start(ctx)
+	helpers.Log("Bot is working...")
 }

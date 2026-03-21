@@ -152,7 +152,11 @@ func NewTwitchClient(config *TwitchConfig, tokName string) (*twitch.Client, erro
 			return nil, err
 		}
 
-		SaveToken(tt, tokName)
+		err = SaveToken(tt, tokName)
+		if err != nil {
+			return twitch.NewClient(config.TwitchUsername, "oauth:"+tt.AccessToken), err
+		}
+
 	}
 
 	return twitch.NewClient(config.TwitchUsername, "oauth:"+tt.AccessToken), nil

@@ -2,7 +2,7 @@ package botik
 
 import (
 	"context"
-	"fmt"
+	"gogoSpoty/helpers"
 	"strings"
 	"time"
 
@@ -42,12 +42,12 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 		results, err := bot.spotify.Search(ctx, m, spotify.SearchTypeTrack)
 
 		if err != nil {
-			fmt.Println(err)
+			helpers.LogErr(err.Error())
 			return
 		}
 
 		if len(results.Tracks.Tracks) == 0 {
-			fmt.Println("Track not found") // Answer in caht later
+			bot.twitch.Say(bot.channel, "Track not found")
 		} else {
 			reqTime := time.Now()
 			bot.cooldowns.Store(uname, reqTime)
@@ -68,7 +68,7 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 			req.TrackArtist = strings.Join(artists, ", ")
 			bot.queue.Add(ctx, req)
 
-			answer := fmt.Sprintf("Found track: %s, Added to queue!", req.TrackName)
+			answer := ("found: " + req.DisplayName() + ", added to queue")
 			bot.twitch.Say(bot.channel, answer)
 		}
 	})

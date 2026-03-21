@@ -14,3 +14,7 @@ func CheckErrFatal(ok bool, msg string) {
 func LogErr(msg string) {
 	slog.Error(msg)
 }
+
+func Log(msg string) {
+	log.Println(msg)
+}

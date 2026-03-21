@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"gogoSpoty/helpers"
 	"time"
 
@@ -20,6 +21,10 @@ type SongRequest struct {
 	TrackName   string    `json:"track_name"`
 	TrackArtist string    `json:"track_artist"`
 	RequestedAt time.Time `json:"requested_at"`
+}
+
+func (s *SongRequest) DisplayName() string {
+	return fmt.Sprintf("%s - %s", s.TrackName, s.TrackArtist)
 }
 
 type Queue struct {
@@ -65,7 +70,7 @@ func (q *Queue) Remove(ctx context.Context) (SongRequest, error) {
 	v := q.client.LPop(ctx, RedisKey)
 
 	if v.Err() == redis.Nil {
-		return req, nil
+		return req, ErrQueueEmpty
 	}
 
 	if v.Err() != nil {
