@@ -53,38 +53,8 @@ func (a *App) Start(ctx context.Context) {
 	go a.srv.ListenAndServe()
 }
 
-// func (app *App) Start(ctx context.Context) {
-// 	ctx, stop := signal.NotifyContext(
-// 		context.Background(),
-// 		syscall.SIGINT, syscall.SIGTERM)
-// 	defer stop()
-
-// 	errCh := make(chan error, 1)
-
-//
-//
-// 	track := &widget.Track{}
-
-//
-
-// 	p :=
-
-// 	go p.Start(ctx)
-
-// 	go func() {
-// 		errCh <- srv.ListenAndServe()
-// 	}()
-
-// 	log.Printf("Listening on: %v", &app.cfg.Spotify.RedirectURL)
-// 	go bot.Start(ctx)
-
-// 	<-ctx.Done()
-// 	log.Println("Shutting down...")
-
-// 	shutdownCtx, cancel := context.WithTimeout(context.Background(), pollInterval)
-// 	defer cancel()
-// 	srv.Shutdown(shutdownCtx)
-// 	redis.Close()
-// 	bot.Disconnect()
-// 	log.Println("Stopped")
-// }
+func (a *App) Shutdown(ctx context.Context) {
+	a.srv.Shutdown(ctx)
+	a.redis.Close()
+	a.bot.Disconnect()
+}

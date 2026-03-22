@@ -25,10 +25,15 @@ func main() {
 		log.Fatalf("Failed to start: %v", err)
 	}
 
+	log.Printf("listening on %v", cfg.Spotify.RedirectURL)
 	application.Start(ctx)
 
 	<-ctx.Done()
 	log.Println("Shutting down...")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), pollInterval)
+	defer cancel()
+
+	application.Shutdown(shutdownCtx)
 
 	log.Println("Stopped")
 }
