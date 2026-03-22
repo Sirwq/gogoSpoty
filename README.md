@@ -1,64 +1,118 @@
 # gogoSpoty
 
-A lightweight Go backend that polls the Spotify API for the currently playing track and exposes it as a browser overlay widget — useful for streaming or screen recording.
+Spotify "Now Playing" OBS widget with Twitch chat song requests.
 
-## How it works
+Shows the current track, artist, album art, and progress bar as a browser source in OBS. Twitch viewers can request songs via `!sr` command in chat — requests are queued in Redis and automatically added to Spotify playback.
 
-1. On first launch, the app starts an OAuth flow and prints an authorization URL in the terminal.
-2. After you authorize in the browser, the token is saved locally — subsequent runs skip the login step.
-3. A background goroutine polls `PlayerCurrentlyPlaying` every 5 seconds and keeps an in-memory `Track` struct up to date.
-4. A small HTTP server serves the widget HTML and a JSON API endpoint.
+## Features
 
-## Endpoints
+- Real-time OBS widget with track info, album cover, and progress bar
+- Twitch chat integration (`!sr <song name>` to request tracks)
+- Redis-backed song queue
+- Per-user cooldowns on song requests
+- Graceful shutdown (SIGINT/SIGTERM)
 
-|        Route        |             Description           |
-|---|---|
-| `GET /widget`       | Serves the HTML overlay widget    |
-| `GET /api/current`  | Returns the current track as JSON |
-| `GET /callback`     | OAuth redirect handler            |
-| `/static/`          | Static assets (JS, CSS, images)   |
+## Requirements
 
-## Project structure
+- Go 1.22+
+- Redis
+- Spotify Premium account
+- Twitch account
+- [Spotify Developer App](https://developer.spotify.com/dashboard) (Client ID + Secret)
+- [Twitch Developer App](https://dev.twitch.tv/console/apps) (Client ID + Secret)
+
+## Project Structure
 
 ```
 gogoSpoty/
-├── main.go          # Entry point, server setup, polling loop
-├── spoty/
-│   ├── auth.go      # OAuth flow, token save/load
-│   ├── handlers.go  # HTTP handlers
-│   ├── track.go     # Track struct with mutex, update logic
-│   └── *_test.go    # Tests
-├── botik/           # (in progress)
-├── static/
-│   ├── widget.html  # Overlay UI
-│   ├── script.js    # Fetches /api/current and updates the DOM
-│   ├── styles.css
-│   └── placeholder.png
-├── go.mod
-└── go.sum
+├── cmd/gogoSpoty/       — entry point
+├── internal/
+│   ├── app/             — application assembly and lifecycle
+│   ├── bot/             — Twitch bot, song queue, cooldowns, auth
+│   ├── config/          — configuration (all env vars)
+│   ├── crypto/          — random state generation for OAuth
+│   ├── poller/          — Spotify playback polling and queue processing
+│   └── widget/          — Spotify OAuth, HTTP server, track state, OBS widget handlers
+├── static/              — widget HTML/CSS/JS and placeholder image
+├── Makefile
+└── go.mod
 ```
 
 ## Setup
 
-**Prerequisites:** Go 1.21+, a Spotify Developer account.
+### 1. Clone
 
-1. Create an app at [developer.spotify.com](https://developer.spotify.com/dashboard) and set the redirect URI to `http://127.0.0.1:5111/callback`.
+```bash
+git clone https://github.com/Sirwq/gogoSpoty.git
+cd gogoSpoty
+```
 
-2. Create a `.env` file in the project root:
-   ```
-   SPOTIFY_ID=your_client_id
-   SPOTIFY_SECRET=your_client_secret
-   ```
+### 2. Configure
 
-3. Run:
-   ```bash
-   go run main.go
-   ```
+Create a `.env` file in the project root:
 
-4. Open the printed URL in your browser to authorize. After that, the widget is available at `http://127.0.0.1:5111/widget`.
+```env
+# Spotify
+CLIENT_ID_SPOTY=your_spotify_client_id
+CLIENT_SECRET_SPOTY=your_spotify_client_secret
+REDIRECT_URL_SPOTY=http://127.0.0.1:5111/callback
 
-## Dependencies
+# Twitch
+TWITCH_USERNAME=your_bot_username
+TWITCH_CHANNEL=your_channel
+TWITCH_CLIENT_ID=your_twitch_client_id
+TWITCH_CLIENT_SECRET=your_twitch_client_secret
+TWITCH_REDIRECT_URL=http://localhost:6111/callback
 
-- [`zmb3/spotify`](https://github.com/zmb3/spotify) — Spotify Web API client
-- [`joho/godotenv`](https://github.com/joho/godotenv) — `.env` loading
-- `golang.org/x/oauth2` — OAuth2 token management
+# Redis
+REDIS_ADDR=localhost:6379
+REDIS_PASSWORD=your_redis_password
+```
+
+### 3. Start Redis
+
+```bash
+# Docker
+docker run -d -p 6379:6379 redis
+
+# Or locally
+redis-server
+```
+
+### 4. Build & Run
+
+```bash
+make run
+```
+
+On first launch, the app will print OAuth URLs for Spotify and Twitch — open them in a browser to authorize. Tokens are saved locally and reused on next start.
+
+## Usage
+
+### OBS Widget
+
+Add a **Browser Source** in OBS with URL:
+
+```
+http://localhost:5111/widget
+```
+
+Recommended size: 500×150. Set background to transparent.
+
+### Song Requests
+
+Viewers type in Twitch chat:
+
+```
+!sr never gonna give you up
+```
+
+The bot searches Spotify, adds the first result to the queue, and confirms in chat. Songs are queued to Spotify playback automatically.
+
+## API
+
+| Endpoint | Description |
+|---|---|
+| `GET /widget` | OBS browser source |
+| `GET /api/current` | Current track JSON |
+| `GET /static/*` | Static assets |
