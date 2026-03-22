@@ -19,7 +19,13 @@ func main() {
 
 	cfg := config.Load()
 
-	application := app.New(ctx, *cfg)
+	application, err := app.New(ctx, cfg)
+
+	if err != nil {
+		log.Fatalf("Failed to start: %v", err)
+	}
+
+	application.Start(ctx)
 
 	<-ctx.Done()
 	log.Println("Shutting down...")

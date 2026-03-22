@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func NewServer(t *Track) *http.ServeMux {
+func NewServerMux(t *Track) *http.ServeMux {
 	mux := http.NewServeMux()
 	setupRoutes(mux, t)
 	return mux
