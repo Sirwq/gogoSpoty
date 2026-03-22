@@ -50,8 +50,7 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 			bot.twitch.Say(bot.channel, "Track not found")
 		} else {
 			reqTime := time.Now()
-			bot.cooldowns.Store(uname, reqTime)
-			var req SongRequest = SongRequest{
+			req := SongRequest{
 				Username:    uname,
 				RequestedAt: reqTime,
 				TrackID:     string(results.Tracks.Tracks[0].ID),
@@ -66,9 +65,18 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 			}
 
 			req.TrackArtist = strings.Join(artists, ", ")
-			bot.queue.Add(ctx, req)
+			err = bot.queue.Add(ctx, req)
 
-			answer := ("found: " + req.DisplayName() + ", added to queue")
+			var answer string
+
+			if err != nil {
+				log.Println("Failed to push to queue")
+				answer = "failed to push to queue"
+			} else {
+				bot.cooldowns.Store(uname, reqTime)
+				answer = ("found: " + req.DisplayName() + ", added to queue")
+			}
+
 			bot.twitch.Say(bot.channel, answer)
 		}
 	})

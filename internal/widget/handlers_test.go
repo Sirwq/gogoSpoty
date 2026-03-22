@@ -55,7 +55,7 @@ func TestWidgetHandler(t *testing.T) {
 		t.Errorf("got status code: %v, expected: 200", rec.Result().StatusCode)
 	}
 
-	var expected string = "<!DOCTYPE html>"
+	expected := "<!DOCTYPE html>"
 	body := strings.Split(rec.Body.String(), "\n")
 
 	if body[0] != expected {

@@ -59,7 +59,7 @@ func ExchangeCode(clientID string, clientSecret string, code string, redirUrl st
 	var tok twitchToken
 
 	if err != nil {
-		log.Printf("Got error %v\n", err)
+		log.Printf("Got error %\n", err)
 		return &tok, err
 	}
 	defer resp.Body.Close()

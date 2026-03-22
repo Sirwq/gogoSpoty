@@ -19,14 +19,14 @@ func NewUserCooldowns() *UserCooldowns {
 }
 
 func (uc *UserCooldowns) Store(key string, time time.Time) {
-	uc.RWMutex.Lock()
-	defer uc.RWMutex.Unlock()
+	uc.Lock()
+	defer uc.Unlock()
 	uc.m[key] = time
 }
 
 func (uc *UserCooldowns) Load(key string) (time.Time, bool) {
-	uc.RWMutex.RLock()
-	defer uc.RWMutex.RUnlock()
+	uc.RLock()
+	defer uc.RUnlock()
 
 	v, ok := uc.m[key]
 	return v, ok
