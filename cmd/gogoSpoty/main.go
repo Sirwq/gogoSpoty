@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const pollInterval = 5 * time.Second
-
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM)
@@ -30,7 +28,7 @@ func main() {
 
 	<-ctx.Done()
 	log.Println("Shutting down...")
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), pollInterval)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	application.Shutdown(shutdownCtx)

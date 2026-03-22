@@ -7,6 +7,7 @@ import (
 	"gogoSpoty/internal/config"
 	"gogoSpoty/internal/crypto"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -52,13 +53,13 @@ func ExchangeCode(clientID string, clientSecret string, code string, redirUrl st
 	data.Set("redirect_uri", redirUrl)
 
 	encodedData := data.Encode()
-	url := "https://id.twitch.tv/oauth2/token"
+	tokenURL := "https://id.twitch.tv/oauth2/token"
 
-	resp, err := http.Post(url, "application/x-www-form-urlencoded", strings.NewReader(encodedData))
+	resp, err := http.Post(tokenURL, "application/x-www-form-urlencoded", strings.NewReader(encodedData))
 	var tok twitchToken
 
 	if err != nil {
-		fmt.Printf("Got error %v\n", err)
+		log.Printf("Got error %v\n", err)
 		return &tok, err
 	}
 	defer resp.Body.Close()
@@ -66,7 +67,7 @@ func ExchangeCode(clientID string, clientSecret string, code string, redirUrl st
 	err = json.NewDecoder(resp.Body).Decode(&tok)
 	if err != nil {
 		if err != io.EOF {
-			fmt.Printf("error decoding json: %v", err)
+			log.Printf("error decoding json: %v", err)
 			return &tok, err
 		}
 	}

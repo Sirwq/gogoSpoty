@@ -51,6 +51,6 @@ func CallbackHandler(state string, auth *spotifyauth.Authenticator, ch chan *oau
 
 func check(err error, msg string) {
 	if err != nil {
-		log.Fatalf("%s: %v", msg, err)
+		log.Printf("%s: %v", msg, err)
 	}
 }

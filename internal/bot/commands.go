@@ -10,14 +10,14 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-const PREFIX_REQUEST = "!sr"
+const prefixRequest = "!sr"
 
 func (bot *Bot) MessageHandler(ctx context.Context) {
 	bot.twitch.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		m := message.Message
 		uname := message.User.Name
 
-		m, ok := SongQuery(m, PREFIX_REQUEST)
+		m, ok := SongQuery(m, prefixRequest)
 		if !ok {
 			return
 		}
@@ -76,12 +76,9 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 }
 
 func SongQuery(msg, prefix string) (string, bool) {
-	_, after, found := strings.Cut(msg, prefix)
-
-	if !found {
+	if !strings.HasPrefix(msg, prefix) {
 		return "", false
 	}
 
-	return strings.TrimSpace(after), true
-
+	return strings.TrimSpace(msg[len(prefix):]), true
 }
