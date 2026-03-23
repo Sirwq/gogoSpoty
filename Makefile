@@ -13,9 +13,9 @@ docker-down:
 	docker compose down
 
 release:
-	GOOS=linux GOARCH=amd64 go build -o gogoSpoty-linux ./cmd/gogoSpoty/
-	GOOS=darwin GOARCH=arm64 go build -o gogoSpoty-macos ./cmd/gogoSpoty/
-	GOOS=windows GOARCH=amd64 go build -o gogoSpoty.exe ./cmd/gogoSpoty/
+	GOOS=linux GOARCH=amd64 go build -tags standalone -o $(APP)-linux ./cmd/$(APP)/
+	GOOS=darwin GOARCH=arm64 go build -tags standalone -o $(APP)-macos ./cmd/$(APP)/
+	GOOS=windows GOARCH=amd64 go build -tags standalone -o $(APP).exe ./cmd/$(APP)/
 
 clean:
-	rm -f $(APP)
+	rm -f $(APP) $(APP)-linux $(APP)-macos $(APP).exe
