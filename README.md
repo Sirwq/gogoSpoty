@@ -1,5 +1,7 @@
 # gogoSpoty
 
+![gogoSpoty widget](docs/demo.gif)
+
 Spotify "Now Playing" OBS widget with Twitch chat song requests.
 
 Shows the current track, artist, album art, and progress bar as a browser source in OBS. Twitch viewers can request songs via `!sr` command in chat — requests are queued in Redis and automatically added to Spotify playback.

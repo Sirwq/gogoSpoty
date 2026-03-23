@@ -18,11 +18,7 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 		uname := message.User.Name
 
 		m, ok := SongQuery(m, prefixRequest)
-		if !ok {
-			return
-		}
-
-		if m == "" {
+		if !ok || m == "" {
 			return
 		}
 
@@ -48,37 +44,39 @@ func (bot *Bot) MessageHandler(ctx context.Context) {
 
 		if len(results.Tracks.Tracks) == 0 {
 			bot.twitch.Say(bot.channel, "Track not found")
-		} else {
-			reqTime := time.Now()
-			req := SongRequest{
-				Username:    uname,
-				RequestedAt: reqTime,
-				TrackID:     string(results.Tracks.Tracks[0].ID),
-				TrackName:   results.Tracks.Tracks[0].Name,
-			}
-
-			var artists []string
-			if results.Tracks.Tracks[0].Artists != nil {
-				for _, artist := range results.Tracks.Tracks[0].Artists {
-					artists = append(artists, artist.Name)
-				}
-			}
-
-			req.TrackArtist = strings.Join(artists, ", ")
-			err = bot.queue.Add(ctx, req)
-
-			var answer string
-
-			if err != nil {
-				log.Println("Failed to push to queue")
-				answer = "failed to push to queue"
-			} else {
-				bot.cooldowns.Store(uname, reqTime)
-				answer = ("found: " + req.DisplayName() + ", added to queue")
-			}
-
-			bot.twitch.Say(bot.channel, answer)
+			return
 		}
+
+		reqTime := time.Now()
+		req := SongRequest{
+			Username:    uname,
+			RequestedAt: reqTime,
+			TrackID:     string(results.Tracks.Tracks[0].ID),
+			TrackName:   results.Tracks.Tracks[0].Name,
+		}
+
+		var artists []string
+		if results.Tracks.Tracks[0].Artists != nil {
+			for _, artist := range results.Tracks.Tracks[0].Artists {
+				artists = append(artists, artist.Name)
+			}
+		}
+
+		req.TrackArtist = strings.Join(artists, ", ")
+		err = bot.queue.Add(ctx, req)
+
+		var answer string
+
+		if err != nil {
+			log.Println("Failed to push to queue")
+			answer = "failed to push to queue"
+		} else {
+			bot.cooldowns.Store(uname, reqTime)
+			answer = ("found: " + req.DisplayName() + ", added to queue")
+		}
+
+		bot.twitch.Say(bot.channel, answer)
+
 	})
 
 }

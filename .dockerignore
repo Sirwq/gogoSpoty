@@ -1,0 +1,7 @@
+.env
+.git
+*.json
+*.rdb
+*.md
+gogoSpoty
+Dockerfile

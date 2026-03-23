@@ -50,7 +50,8 @@ func (p *Poller) Start(ctx context.Context) {
 
 			if err == bot.ErrQueueEmpty {
 				continue
-			} else if err != nil {
+			}
+			if err != nil {
 				log.Printf("Error in poller: %v\n", err)
 				continue
 			}

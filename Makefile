@@ -6,5 +6,11 @@ build:
 run: build
 	./$(APP)
 
+docker:
+	docker compose up --build
+
+docker-down:
+	docker compose down
+
 clean:
 	rm -f $(APP)

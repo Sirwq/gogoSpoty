@@ -1,6 +1,6 @@
 module gogoSpoty
 
-go 1.25.6
+go 1.25
 
 require (
 	github.com/gempir/go-twitch-irc/v4 v4.3.1
