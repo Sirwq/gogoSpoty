@@ -7,11 +7,10 @@ import (
 	"gogoSpoty/internal/config"
 	"gogoSpoty/internal/poller"
 	"gogoSpoty/internal/widget"
+	"io"
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 const pollInterval = 5 * time.Second
@@ -19,7 +18,7 @@ const pollInterval = 5 * time.Second
 type App struct {
 	srv    *http.Server
 	bot    *bot.Bot
-	redis  *redis.Client
+	closer io.Closer
 	poller *poller.Poller
 	errors chan error
 }
@@ -41,14 +40,12 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	}
 
 	spotify := widget.NewSpotifyClient(ctx, &cfg.Spotify, "SpotifyToken.json")
-
-	redisClient := bot.NewRedisClient(&cfg.Redis)
-	queue := bot.NewQueue(redisClient)
+	queue := bot.NewQueue(&cfg.Redis)
 
 	b := bot.NewBot(twitch, spotify, queue, cooldowns, cfg.Twitch.Channel)
 	p := poller.NewPoller(spotify, track, queue, pollInterval)
 	e := make(chan error, 2)
-	return &App{srv: server, bot: b, redis: redisClient, poller: p, errors: e}, nil
+	return &App{srv: server, bot: b, closer: queue, poller: p, errors: e}, nil
 }
 
 func (a *App) Start(ctx context.Context) {
@@ -69,8 +66,10 @@ func (a *App) Shutdown(ctx context.Context) {
 	if err := a.srv.Shutdown(ctx); err != nil {
 		log.Printf("HTTP shutdown error: %v", err)
 	}
-	if err := a.redis.Close(); err != nil {
-		log.Printf("Redis shutdown error: %v", err)
+	if a.closer != nil {
+		if err := a.closer.Close(); err != nil {
+			log.Printf("Redis shutdown error: %v", err)
+		}
 	}
 	a.bot.Disconnect()
 }

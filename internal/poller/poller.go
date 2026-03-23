@@ -13,12 +13,12 @@ import (
 type Poller struct {
 	Client       *spotify.Client
 	Track        *widget.Track
-	Queue        *bot.Queue
+	Queue        bot.Queue
 	Interval     time.Duration
 	LastQueuedID string
 }
 
-func NewPoller(client *spotify.Client, track *widget.Track, q *bot.Queue, interval time.Duration) *Poller {
+func NewPoller(client *spotify.Client, track *widget.Track, q bot.Queue, interval time.Duration) *Poller {
 	return &Poller{
 		Client:   client,
 		Track:    track,

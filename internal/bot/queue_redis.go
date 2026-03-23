@@ -1,34 +1,19 @@
+//go:build !standalone
+
 package bot
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"gogoSpoty/internal/config"
 	"log"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-var ErrQueueEmpty = errors.New("queue is empty")
-
 const RedisKey = "song_queue"
 
-type SongRequest struct {
-	Username    string    `json:"username"`
-	TrackID     string    `json:"track_id"`
-	TrackName   string    `json:"track_name"`
-	TrackArtist string    `json:"track_artist"`
-	RequestedAt time.Time `json:"requested_at"`
-}
-
-func (s *SongRequest) DisplayName() string {
-	return fmt.Sprintf("%s - %s", s.TrackName, s.TrackArtist)
-}
-
-type Queue struct {
+type RedisQueue struct {
 	client *redis.Client
 }
 
@@ -43,11 +28,15 @@ func NewRedisClient(conf *config.RedisConfig) *redis.Client {
 	return client
 }
 
-func NewQueue(client *redis.Client) *Queue {
-	return &Queue{client: client}
+func NewQueue(cfg *config.RedisConfig) Queue {
+	client := redis.NewClient(&redis.Options{
+		Addr:     cfg.Addr,
+		Password: cfg.Password,
+	})
+	return &RedisQueue{client: client}
 }
 
-func (q *Queue) Add(ctx context.Context, req SongRequest) error {
+func (q *RedisQueue) Add(ctx context.Context, req SongRequest) error {
 	data, err := json.Marshal(req)
 
 	if err != nil {
@@ -65,7 +54,7 @@ func (q *Queue) Add(ctx context.Context, req SongRequest) error {
 	return nil
 }
 
-func (q *Queue) Remove(ctx context.Context) (SongRequest, error) {
+func (q *RedisQueue) Remove(ctx context.Context) (SongRequest, error) {
 	var req SongRequest
 
 	v := q.client.LPop(ctx, RedisKey)
@@ -93,7 +82,7 @@ func (q *Queue) Remove(ctx context.Context) (SongRequest, error) {
 	return req, nil
 }
 
-func (q *Queue) Read(ctx context.Context) ([]SongRequest, error) {
+func (q *RedisQueue) Read(ctx context.Context) ([]SongRequest, error) {
 	songs, err := q.client.LRange(ctx, RedisKey, 0, -1).Result()
 
 	if err != nil {
@@ -112,7 +101,7 @@ func (q *Queue) Read(ctx context.Context) ([]SongRequest, error) {
 	return result, nil
 }
 
-func (q *Queue) Peek(ctx context.Context) (SongRequest, error) {
+func (q *RedisQueue) Peek(ctx context.Context) (SongRequest, error) {
 	var s SongRequest
 
 	data, err := q.client.LIndex(ctx, RedisKey, 0).Result()
@@ -132,4 +121,8 @@ func (q *Queue) Peek(ctx context.Context) (SongRequest, error) {
 
 	return s, nil
 
+}
+
+func (q *RedisQueue) Close() error {
+	return q.client.Close()
 }

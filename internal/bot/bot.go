@@ -10,7 +10,7 @@ import (
 type Bot struct {
 	twitch    *twitch.Client
 	spotify   *spotify.Client
-	queue     *Queue
+	queue     Queue
 	cooldowns *UserCooldowns
 	channel   string
 }
@@ -18,7 +18,7 @@ type Bot struct {
 func NewBot(
 	twitchClient *twitch.Client,
 	spotifyClient *spotify.Client,
-	queue *Queue,
+	queue Queue,
 	cooldowns *UserCooldowns,
 	channel string,
 ) *Bot {
