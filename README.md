@@ -16,12 +16,11 @@ Shows the current track, artist, album art, and progress bar as a browser source
 
 ## Requirements
 
-- Go 1.22+
-- Redis
+- Docker and Docker Compose **or** Go 1.26+ with Redis
 - Spotify Premium account
 - Twitch account
 - [Spotify Developer App](https://developer.spotify.com/dashboard) (Client ID + Secret)
-- [Twitch Developer App](https://dev.twitch.tv/console/apps) (Client ID + Secret)
+- [Twitch Developer App](https://dev.twitch.tv/console) (Client ID + Secret)
 
 ## Project Structure
 
@@ -36,6 +35,8 @@ gogoSpoty/
 │   ├── poller/          — Spotify playback polling and queue processing
 │   └── widget/          — Spotify OAuth, HTTP server, track state, OBS widget handlers
 ├── static/              — widget HTML/CSS/JS and placeholder image
+├── Dockerfile
+├── docker-compose.yml
 ├── Makefile
 └── go.mod
 ```
@@ -51,41 +52,37 @@ cd gogoSpoty
 
 ### 2. Configure
 
-Create a `.env` file in the project root:
-
-```env
-# Spotify
-CLIENT_ID_SPOTY=your_spotify_client_id
-CLIENT_SECRET_SPOTY=your_spotify_client_secret
-REDIRECT_URL_SPOTY=http://127.0.0.1:5111/callback
-
-# Twitch
-TWITCH_USERNAME=your_bot_username
-TWITCH_CHANNEL=your_channel
-TWITCH_CLIENT_ID=your_twitch_client_id
-TWITCH_CLIENT_SECRET=your_twitch_client_secret
-TWITCH_REDIRECT_URL=http://localhost:6111/callback
-
-# Redis
-REDIS_ADDR=localhost:6379
-REDIS_PASSWORD=your_redis_password
+```bash
+cp .env.example .env
 ```
 
-### 3. Start Redis
+Open `.env` and fill in your Spotify and Twitch credentials. Redirect URLs in `.env` must match those in your Spotify Dashboard and Twitch Developer Console.
+
+### 3. Run
+
+#### Docker Compose (recommended)
 
 ```bash
-# Docker
-docker run -d -p 6379:6379 redis
-
-# Or locally
-redis-server
+docker compose up --build
 ```
 
-### 4. Build & Run
+This starts both the app and Redis. No need to install Go or Redis locally.
+
+To stop:
+
+```bash
+docker compose down
+```
+
+#### Without Docker
+
+Requires Go 1.26+ and a running Redis instance. Set `REDIS_ADDR=localhost:6379` in `.env`.
 
 ```bash
 make run
 ```
+
+### 4. First Launch
 
 On first launch, the app will print OAuth URLs for Spotify and Twitch — open them in a browser to authorize. Tokens are saved locally and reused on next start.
 
@@ -110,6 +107,16 @@ Viewers type in Twitch chat:
 ```
 
 The bot searches Spotify, adds the first result to the queue, and confirms in chat. Songs are queued to Spotify playback automatically.
+
+## Makefile
+
+| Command | Description |
+|---|---|
+| `make build` | Build the binary |
+| `make run` | Build and run |
+| `make clean` | Remove the binary |
+| `make docker` | Start with Docker Compose |
+| `make docker-down` | Stop Docker Compose |
 
 ## API
 
